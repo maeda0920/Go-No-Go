@@ -4,10 +4,13 @@
   <meta charset="utf-8">
   <title>Go No-Go Test</title>
 
-  <script src="https://unpkg.com/jspsych@8.2.2"></script>
-  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
-  <script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0"></script>
-  <link href="https://unpkg.com/jspsych@8.2.2/css/jspsych.css" rel="stylesheet">
+ <script src="https://unpkg.com/jspsych@8.2.2"></script>
+
+<script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
+
+<script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0"></script>
+
+<link href="https://unpkg.com/jspsych@8.2.2/css/jspsych.css" rel="stylesheet">
 </head>
 
 <body></body>
@@ -123,18 +126,27 @@ let beta =
   );
 
     let csv =
-      "試行番号,刺激種類,刺激色,反応時間(ms),正誤,エラー種類\n";
+      "被験者ID,試行番号,刺激種類,刺激色,反応時間(ms),正誤,エラー種類\n";
 
     data.forEach(function(d, i){
 
       csv +=
-        (i+1) + "," +
-        d.stimulus_type + "," +
-        d.color + "," +
-        (d.rt ?? "") + "," +
-        d.correct + "," +
-        d.error_type +
-        "\n";
+
+participant_id + "," +
+
+(i+1) + "," +
+
+d.stimulus_type + "," +
+
+d.color + "," +
+
+(d.rt ?? "") + "," +
+
+d.correct + "," +
+
+d.error_type +
+
+"\n";
 
     });
 
@@ -171,7 +183,9 @@ let blob = new Blob(
 
     link.href = URL.createObjectURL(blob);
 
-    link.download = "GoNoGo結果.csv";
+   link.download =
+participant_id +
+"_GoNoGo結果.csv";
 
     link.click();
 
@@ -181,9 +195,43 @@ let blob = new Blob(
 
 let timeline = [];
 
-let participant_id = "test001";
+let participant_id = "";
 
-const stimulus_duration = 500;
+const participant_form = {
+  type: jsPsychSurveyText,
+  questions: [
+    {
+      prompt: "被験者IDを入力してください",
+      placeholder: "例：P001",
+      required: true
+    }
+  ],
+
+  button_label: "開始",
+
+  on_finish:function(data){
+
+  participant_id =
+    data.response.Q0;
+
+  jsPsych.data.addProperties({
+
+    participant_id:
+      participant_id,
+
+    date:
+      new Date()
+      .toLocaleString("ja-JP")
+
+  });
+
+}
+};
+
+timeline.push(participant_form);
+
+let stimulus_duration = 500;
+let current_mode = "";
 
 timeline.push({
   type: jsPsychHtmlKeyboardResponse,
@@ -221,11 +269,13 @@ function makeTrial(stimulus_type, color) {
     trial_duration: stimulus_duration,
     response_ends_trial: false,
     data: {
-      task: "go_nogo",
-      stimulus_type: stimulus_type,
-      color: color,
-      stimulus_duration: stimulus_duration
-    },
+  task: "go_nogo",
+  mode: current_mode,
+  stimulus_type: stimulus_type,
+  color: color,
+  stimulus_duration: stimulus_duration
+  },
+
     on_finish: function(data) {
       if (stimulus_type === "go") {
         data.correct = data.response !== null;
@@ -242,6 +292,22 @@ function makeTrial(stimulus_type, color) {
       }
     }
   };
+}
+
+function createTrialList(go_count, nogo_count) {
+
+  let trials = [];
+
+  for(let i=0; i<go_count; i++){
+    trials.push(["go","blue"]);
+  }
+
+  for(let i=0; i<nogo_count; i++){
+    trials.push(["nogo","red"]);
+  }
+
+  return jsPsych.randomization.shuffle(trials);
+
 }
 
 let trial_list = [
@@ -261,45 +327,70 @@ timeline.push({
   choices:[" "]
 });
 
-let practice_trials = [
-  ["go", "blue"],
-  ["go", "blue"],
-  ["go", "blue"],
-  ["go", "blue"],
-  ["nogo", "red"]
-];
+// 練習：20試行、刺激時間500ms
+let practice_trials = createTrialList(7, 3);
 
-trial_list =
-jsPsych.randomization.repeat(trial_list,10);
+// 高難度：150試行、刺激時間300ms
+let main_trials = createTrialList(105, 45);
 
+current_mode = "practice";
+stimulus_duration = 500;
 
-
-for(let i=0;i<practice_trials.length;i++){
-
+for (let i=0; i<practice_trials.length; i++){
   timeline.push(makeFixation());
+  timeline.push(makeTrial(practice_trials[i][0], practice_trials[i][1]));
+}
+
+// ここで止まる
+timeline.push({
+
+  type: jsPsychHtmlKeyboardResponse,
+
+  stimulus: `
+    <h2>練習終了</h2>
+
+    <p>
+      本試行を開始します。
+    </p>
+
+    <p>
+      本試行は150試行です。
+    </p>
+
+    <p>
+      青丸ではスペースキーを押してください。
+    </p>
+
+    <p>
+      赤丸では押さないでください。
+    </p>
+
+    <p>
+      準備ができたらスペースキーを押してください。
+    </p>
+  `,
+
+  choices:[" "]
+
+});
+
+current_mode = "main";
+
+stimulus_duration = 300;
+
+for(let i=0;i<main_trials.length;i++){
+
+  timeline.push(
+    makeFixation()
+  );
 
   timeline.push(
     makeTrial(
-      practice_trials[i][0],
-      practice_trials[i][1]
+      main_trials[i][0],
+      main_trials[i][1]
     )
   );
 
-}
-
-timeline.push({
-  type: jsPsychHtmlKeyboardResponse,
-  stimulus: `
-    <h2>練習終了</h2>
-    <p>本試行を開始します。</p>
-    <p>準備ができたらスペースキーを押してください。</p>
-  `,
-  choices: [" "]
-});
-
-for (let i = 0; i < trial_list.length; i++) {
-  timeline.push(makeFixation());
-  timeline.push(makeTrial(trial_list[i][0], trial_list[i][1]));
 }
 
 timeline.push({
