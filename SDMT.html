@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SDMT Task</title>
+
+  <script src="https://unpkg.com/jspsych@8.2.2"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0"></script>
+  <link href="https://unpkg.com/jspsych@8.2.2/css/jspsych.css" rel="stylesheet">
+</head>
+
+<body></body>
+
+<script>
+let participant_id = "";
+let start_time = "";
+
+let current_symbol = "";
+let current_block = 0;
+let task_start_time = 0;
+
+let practice_trial_number = 0;
+let block_trial_number = 0;
+
+const symbols = ["◆", "■", "▲", "●", "★", "♥", "♣", "♠", "☀"];
+
+const symbol_maps = {
+  practice: {
+    "◆": "1",
+    "■": "2",
+    "▲": "3",
+    "●": "4",
+    "★": "5",
+    "♥": "6",
+    "♣": "7",
+    "♠": "8",
+    "☀": "9"
+  },
+
+  block1: {
+    "▲": "1",
+    "♥": "2",
+    "◆": "3",
+    "♠": "4",
+    "★": "5",
+    "☀": "6",
+    "■": "7",
+    "♣": "8",
+    "●": "9"
+  },
+
+  block2: {
+    "■": "1",
+    "☀": "2",
+    "♣": "3",
+    "◆": "4",
+    "♠": "5",
+    "▲": "6",
+    "●": "7",
+    "★": "8",
+    "♥": "9"
+  },
+
+  block3: {
+    "♣": "1",
+    "●": "2",
+    "☀": "3",
+    "♥": "4",
+    "◆": "5",
+    "■": "6",
+    "★": "7",
+    "▲": "8",
+    "♠": "9"
+  }
+};
+
+let current_map_name = "practice";
+
+function keyTableHTML() {
+
+  let current_map =
+    symbol_maps[current_map_name];
+
+  let number_order =
+    ["1","2","3","4","5","6","7","8","9"];
+
+  let symbol_order =
+    number_order.map(function(num) {
+      return Object.keys(current_map).find(function(sym) {
+        return current_map[sym] === num;
+      });
+    });
+
+  let html = `
+    <table style="margin:auto; border-collapse:collapse; font-size:28px;">
+      <tr>
+  `;
+
+  symbol_order.forEach(function(s){
+    html += `
+      <td style="border:1px solid #999; padding:10px 16px;">
+        ${s}
+      </td>
+    `;
+  });
+
+  html += `</tr><tr>`;
+
+  number_order.forEach(function(n){
+    html += `
+      <td style="border:1px solid #999; padding:10px 16px;">
+        ${n}
+      </td>
+    `;
+  });
+
+  html += `</tr></table>`;
+
+  return html;
+}
+
+function calculateBlockResults(block_number) {
+  let data = jsPsych.data.get()
+    .filter({task: "sdmt_main", block: block_number})
+    .values();
+
+  return calculateFromData(data);
+}
+
+function calculateOverallResults() {
+  let data = jsPsych.data.get()
+    .filter({task: "sdmt_main"})
+    .values();
+
+  return calculateFromData(data);
+}
+
+function calculateFromData(data) {
+  let total_responses = data.length;
+  let correct_count = data.filter(d => d.correct === true).length;
+  let incorrect_count = data.filter(d => d.correct === false).length;
+
+  let accuracy =
+    total_responses > 0
+    ? 100 * correct_count / total_responses
+    : 0;
+
+  let rt_values = data
+    .filter(d => d.rt !== null && d.rt >= 150 && d.rt <= 5000)
+    .map(d => d.rt);
+
+  let mean_rt = NaN;
+  let median_rt = NaN;
+  let min_rt = NaN;
+  let max_rt = NaN;
+  let sd_rt = NaN;
+  let se_rt = NaN;
+  let cv_rt = NaN;
+
+  if (rt_values.length > 0) {
+    mean_rt =
+      rt_values.reduce((a,b)=>a+b,0) / rt_values.length;
+
+    min_rt = Math.min(...rt_values);
+    max_rt = Math.max(...rt_values);
+
+    let sorted =
+      [...rt_values].sort((a,b)=>a-b);
+
+    if (sorted.length % 2 === 0) {
+      median_rt =
+        (
+          sorted[sorted.length/2 - 1] +
+          sorted[sorted.length/2]
+        ) / 2;
+    } else {
+      median_rt =
+        sorted[Math.floor(sorted.length/2)];
+    }
+
+    if (rt_values.length > 1) {
+      sd_rt =
+        Math.sqrt(
+          rt_values.reduce(
+            (sum,x)=>sum + Math.pow(x-mean_rt,2),
+            0
+          ) / (rt_values.length - 1)
+        );
+
+      se_rt =
+        sd_rt / Math.sqrt(rt_values.length);
+
+      cv_rt =
+        sd_rt / mean_rt;
+    }
+  }
+
+  let processing_speed =
+    correct_count / 90;
+
+  return {
+    data,
+    total_responses,
+    correct_count,
+    incorrect_count,
+    accuracy,
+    mean_rt,
+    median_rt,
+    min_rt,
+    max_rt,
+    sd_rt,
+    se_rt,
+    cv_rt,
+    processing_speed
+  };
+}
+
+function formatNumber(x, digits=1) {
+  if (x === undefined || x === null || Number.isNaN(x)) {
+    return "";
+  }
+  return Number(x).toFixed(digits);
+}
+
+const jsPsych = initJsPsych({
+  on_finish: function() {
+
+    let all_data =
+      jsPsych.data.get()
+      .filter({task: "sdmt_main"})
+      .values();
+
+    let csv =
+      "被験者ID,実施日時,本試行回,試行番号,記号,正答,回答,正誤,反応時間(ms)\n";
+
+    all_data.forEach(function(d){
+      csv +=
+        participant_id + "," +
+        start_time + "," +
+        d.block + "," +
+        d.trial_number + "," +
+        d.symbol + "," +
+        d.correct_response + "," +
+        d.response + "," +
+        (d.correct ? "正答" : "誤答") + "," +
+        d.rt +
+        "\n";
+    });
+
+    let r1 = calculateBlockResults(1);
+let r2 = calculateBlockResults(2);
+let r3 = calculateBlockResults(3);
+
+let overall =
+  calculateOverallResults();
+
+let average_total_responses =
+  (r1.total_responses + r2.total_responses + r3.total_responses) / 3;
+
+let average_correct_count =
+  (r1.correct_count + r2.correct_count + r3.correct_count) / 3;
+
+let average_incorrect_count =
+  (r1.incorrect_count + r2.incorrect_count + r3.incorrect_count) / 3;
+
+let average_accuracy =
+  (r1.accuracy + r2.accuracy + r3.accuracy) / 3;
+
+let average_mean_rt =
+  (r1.mean_rt + r2.mean_rt + r3.mean_rt) / 3;
+
+let average_median_rt =
+  (r1.median_rt + r2.median_rt + r3.median_rt) / 3;
+
+let average_sd_rt =
+  (r1.sd_rt + r2.sd_rt + r3.sd_rt) / 3;
+
+let average_se_rt =
+  (r1.se_rt + r2.se_rt + r3.se_rt) / 3;
+
+let average_cv_rt =
+  (r1.cv_rt + r2.cv_rt + r3.cv_rt) / 3;
+
+let average_processing_speed =
+  (r1.processing_speed + r2.processing_speed + r3.processing_speed) / 3;
+
+csv += "\n";
+csv += "===== 各回・合計・平均の集計結果 =====\n";
+csv += "区分,総回答数,正答数,誤答数,正答率(%),平均RT(ms),中央値RT(ms),RT標準偏差,RT標準誤差,CV,処理速度(正答数/秒)\n";
+
+csv +=
+  "本試行1回目," +
+  r1.total_responses + "," +
+  r1.correct_count + "," +
+  r1.incorrect_count + "," +
+  formatNumber(r1.accuracy,1) + "," +
+  formatNumber(r1.mean_rt,1) + "," +
+  formatNumber(r1.median_rt,1) + "," +
+  formatNumber(r1.sd_rt,1) + "," +
+  formatNumber(r1.se_rt,1) + "," +
+  formatNumber(r1.cv_rt,3) + "," +
+  formatNumber(r1.processing_speed,3) +
+  "\n";
+
+csv +=
+  "本試行2回目," +
+  r2.total_responses + "," +
+  r2.correct_count + "," +
+  r2.incorrect_count + "," +
+  formatNumber(r2.accuracy,1) + "," +
+  formatNumber(r2.mean_rt,1) + "," +
+  formatNumber(r2.median_rt,1) + "," +
+  formatNumber(r2.sd_rt,1) + "," +
+  formatNumber(r2.se_rt,1) + "," +
+  formatNumber(r2.cv_rt,3) + "," +
+  formatNumber(r2.processing_speed,3) +
+  "\n";
+
+csv +=
+  "本試行3回目," +
+  r3.total_responses + "," +
+  r3.correct_count + "," +
+  r3.incorrect_count + "," +
+  formatNumber(r3.accuracy,1) + "," +
+  formatNumber(r3.mean_rt,1) + "," +
+  formatNumber(r3.median_rt,1) + "," +
+  formatNumber(r3.sd_rt,1) + "," +
+  formatNumber(r3.se_rt,1) + "," +
+  formatNumber(r3.cv_rt,3) + "," +
+  formatNumber(r3.processing_speed,3) +
+  "\n";
+
+csv +=
+  "3回合計," +
+  overall.total_responses + "," +
+  overall.correct_count + "," +
+  overall.incorrect_count + "," +
+  formatNumber(overall.accuracy,1) + "," +
+  formatNumber(overall.mean_rt,1) + "," +
+  formatNumber(overall.median_rt,1) + "," +
+  formatNumber(overall.sd_rt,1) + "," +
+  formatNumber(overall.se_rt,1) + "," +
+  formatNumber(overall.cv_rt,3) + "," +
+  formatNumber(overall.processing_speed,3) +
+  "\n";
+
+csv +=
+  "3回平均," +
+  formatNumber(average_total_responses,1) + "," +
+  formatNumber(average_correct_count,1) + "," +
+  formatNumber(average_incorrect_count,1) + "," +
+  formatNumber(average_accuracy,1) + "," +
+  formatNumber(average_mean_rt,1) + "," +
+  formatNumber(average_median_rt,1) + "," +
+  formatNumber(average_sd_rt,1) + "," +
+  formatNumber(average_se_rt,1) + "," +
+  formatNumber(average_cv_rt,3) + "," +
+  formatNumber(average_processing_speed,3) +
+  "\n";
+
+    let bom =
+      new Uint8Array([0xEF, 0xBB, 0xBF]);
+
+    let blob =
+      new Blob(
+        [bom, csv],
+        {type:"text/csv;charset=utf-8;"}
+      );
+
+    let link =
+      document.createElement("a");
+
+    link.href =
+      URL.createObjectURL(blob);
+
+    let safe_id =
+      participant_id || "unknown";
+
+    link.download =
+      safe_id + "_SDMT_3回結果.csv";
+
+    link.click();
+  }
+});
+
+let timeline = [];
+
+timeline.push({
+  type: jsPsychSurveyText,
+  questions: [
+    {
+      prompt: "被験者IDを入力してください",
+      placeholder: "例：P001",
+      required: true
+    }
+  ],
+  button_label: "開始",
+  on_finish: function(data) {
+    participant_id =
+      data.response.Q0;
+
+    start_time =
+      new Date().toLocaleString("ja-JP");
+
+    jsPsych.data.addProperties({
+      participant_id: participant_id,
+      start_time: start_time
+    });
+  }
+});
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `
+    <h1>SDMT課題</h1>
+
+    <p>
+      画面上部の対応表を見ながら、
+      中央に表示される記号に対応する数字を押してください。
+    </p>
+
+    <p>
+      回答にはキーボードの
+      <strong>1〜9</strong>
+      を使用します。
+    </p>
+
+    <p>
+      本試行は
+      <strong>90秒間 × 3回</strong>
+      実施します。
+    </p>
+
+    <p>
+      できるだけ速く、正確に回答してください。
+    </p>
+
+    <br>
+
+    ${keyTableHTML()}
+
+    <br>
+
+    <p>
+      スペースキーを押すと練習を開始します。
+    </p>
+  `,
+  choices: [" "]
+});
+
+function createSDMTTrial(is_practice) {
+
+  return {
+    type: jsPsychHtmlKeyboardResponse,
+
+    stimulus: function() {
+
+      current_symbol =
+        jsPsych.randomization.sampleWithoutReplacement(symbols, 1)[0];
+
+      return `
+        ${keyTableHTML()}
+
+        <div style="font-size:90px; margin-top:60px;">
+          ${current_symbol}
+        </div>
+
+        <p style="font-size:20px;">
+          対応する数字キーを押してください
+        </p>
+      `;
+    },
+
+    choices: ["1","2","3","4","5","6","7","8","9"],
+
+    data: function() {
+
+      if (is_practice) {
+
+        practice_trial_number += 1;
+
+        return {
+          task: "sdmt_practice",
+          block: "practice",
+          map_name: current_map_name,
+          trial_number: practice_trial_number,
+          symbol: current_symbol,
+          correct_response:
+            symbol_maps[current_map_name][current_symbol]
+        };
+
+      } else {
+
+        block_trial_number += 1;
+
+        return {
+          task: "sdmt_main",
+          block: current_block,
+          map_name: current_map_name,
+          trial_number: block_trial_number,
+          symbol: current_symbol,
+          correct_response:
+            symbol_maps[current_map_name][current_symbol]
+        };
+
+      }
+
+    },
+
+    on_finish: function(data) {
+      data.correct =
+        data.response === data.correct_response;
+    }
+  };
+}
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `
+    <h2>練習試行</h2>
+    <p>まず10試行練習します。</p>
+    <p>スペースキーを押してください。</p>
+  `,
+  choices: [" "]
+});
+
+for (let i = 0; i < 10; i++) {
+  timeline.push(
+    createSDMTTrial(true)
+  );
+}
+
+function addMainBlock(block_number) {
+
+  timeline.push({
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: "",
+    choices: "NO_KEYS",
+    trial_duration: 1,
+    on_start: function() {
+      current_block = block_number;
+      current_map_name = "block" + block_number;
+      block_trial_number = 0;
+    }
+  });
+
+  timeline.push({
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: function() {
+      return `
+        <h2>本試行 ${block_number} 回目</h2>
+
+        <p>ここから本試行 ${block_number} 回目を開始します。</p>
+        <p>本試行は90秒間です。</p>
+        <p>この回では、以下の対応表を使用します。</p>
+
+        ${keyTableHTML()}
+
+        <p>できるだけ速く、正確に回答してください。</p>
+        <p>スペースキーを押すと開始します。</p>
+      `;
+    },
+    choices: [" "],
+    on_finish: function() {
+      task_start_time = performance.now();
+    }
+  });
+
+  timeline.push({
+    timeline: [
+      createSDMTTrial(false)
+    ],
+
+    loop_function: function() {
+      let elapsed =
+        performance.now() - task_start_time;
+
+      return elapsed < 90000;
+    }
+  });
+
+  if (block_number < 3) {
+    timeline.push({
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: `
+        <h2>本試行 ${block_number} 回目終了</h2>
+
+        <p>次は本試行 ${block_number + 1} 回目です。</p>
+        <p>準備ができたらスペースキーを押してください。</p>
+      `,
+      choices: [" "]
+    });
+  }
+}
+
+addMainBlock(1);
+addMainBlock(2);
+addMainBlock(3);
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+
+  stimulus: function() {
+    let r1 = calculateBlockResults(1);
+    let r2 = calculateBlockResults(2);
+    let r3 = calculateBlockResults(3);
+
+    let overall = calculateOverallResults();
+
+    let average_total_responses =
+  (r1.total_responses +
+   r2.total_responses +
+   r3.total_responses) / 3;
+
+let average_correct_count =
+  (r1.correct_count +
+   r2.correct_count +
+   r3.correct_count) / 3;
+
+let average_accuracy =
+  (r1.accuracy +
+   r2.accuracy +
+   r3.accuracy) / 3;
+
+let average_mean_rt =
+  (r1.mean_rt +
+   r2.mean_rt +
+   r3.mean_rt) / 3;
+
+let average_processing_speed =
+  (r1.processing_speed +
+   r2.processing_speed +
+   r3.processing_speed) / 3;
+
+    return `
+  <h2>測定結果</h2>
+
+  <h3>本試行1回目</h3>
+  <p>総回答数：${r1.total_responses}</p>
+  <p>正答数：${r1.correct_count}</p>
+  <p>正答率：${formatNumber(r1.accuracy,1)}%</p>
+  <p>平均RT：${formatNumber(r1.mean_rt,1)} ms</p>
+
+  <h3>本試行2回目</h3>
+  <p>総回答数：${r2.total_responses}</p>
+  <p>正答数：${r2.correct_count}</p>
+  <p>正答率：${formatNumber(r2.accuracy,1)}%</p>
+  <p>平均RT：${formatNumber(r2.mean_rt,1)} ms</p>
+
+  <h3>本試行3回目</h3>
+  <p>総回答数：${r3.total_responses}</p>
+  <p>正答数：${r3.correct_count}</p>
+  <p>正答率：${formatNumber(r3.accuracy,1)}%</p>
+  <p>平均RT：${formatNumber(r3.mean_rt,1)} ms</p>
+
+  <h3>3回合計</h3>
+  <p>総回答数：${overall.total_responses}</p>
+  <p>正答数：${overall.correct_count}</p>
+  <p>正答率：${formatNumber(overall.accuracy,1)}%</p>
+  <p>平均RT：${formatNumber(overall.mean_rt,1)} ms</p>
+
+  <h3>3回平均</h3>
+  <p>平均総回答数：${formatNumber(average_total_responses,1)}</p>
+  <p>平均正答数：${formatNumber(average_correct_count,1)}</p>
+  <p>平均正答率：${formatNumber(average_accuracy,1)}%</p>
+  <p>平均RT：${formatNumber(average_mean_rt,1)} ms</p>
+
+  <br>
+  <p>スペースキーを押すとCSVを保存して終了します。</p>
+`;
+  },
+
+  choices: [" "]
+});
+
+jsPsych.run(timeline);
+</script>
+</html>
