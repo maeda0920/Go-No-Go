@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Go No-Go Test</title>
+
+ <script src="https://unpkg.com/jspsych@8.2.2"></script>
+
+<script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
+
+<script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0"></script>
+
+<link href="https://unpkg.com/jspsych@8.2.2/css/jspsych.css" rel="stylesheet">
+</head>
+
+<body></body>
+
+<script>
+const jsPsych = initJsPsych({
+
+  on_finish: function() {
+
+    let data = jsPsych.data.get()
+      .filter({task:"go_nogo"})
+      .values();
+
+    let go_data = data.filter(d => d.stimulus_type === "go");
+let nogo_data = data.filter(d => d.stimulus_type === "nogo");
+
+let go_rt = go_data
+ .filter(d => d.rt !== null && d.rt >= 150 && d.rt <= 1000)
+  .map(d => d.rt);
+
+if (go_rt.length === 0) {
+  go_rt = [NaN];
+}
+
+let mean_rt =
+  go_rt.reduce((a,b)=>a+b,0) / go_rt.length;
+
+let sd_rt =
+  Math.sqrt(
+    go_rt.reduce(
+      (sum,x)=>sum + Math.pow(x-mean_rt,2),
+      0
+    ) / (go_rt.length-1)
+  );
+
+let sorted_rt =
+  [...go_rt].sort((a,b)=>a-b);
+
+let median_rt;
+
+if (sorted_rt.length % 2 === 0) {
+  median_rt =
+    (
+      sorted_rt[sorted_rt.length/2 - 1] +
+      sorted_rt[sorted_rt.length/2]
+    ) / 2;
+} else {
+  median_rt =
+    sorted_rt[Math.floor(sorted_rt.length/2)];
+}
+
+let min_rt = Math.min(...go_rt);
+let max_rt = Math.max(...go_rt);
+let n_trials = go_rt.length;
+
+let se_rt = sd_rt / Math.sqrt(go_rt.length);
+let cv_rt = sd_rt / mean_rt;
+
+let go_accuracy =
+  100 * (
+    go_data.filter(d => d.correct === true).length /
+    go_data.length
+  );
+
+let nogo_accuracy =
+  100 * (
+    nogo_data.filter(d => d.correct === true).length /
+    nogo_data.length
+  );
+
+let commission_rate = 100 - nogo_accuracy;
+let omission_rate = 100 - go_accuracy;
+
+function z(p){
+  let a1=-39.6968302866538;
+  let a2=220.946098424521;
+  let a3=-275.928510446969;
+  let a4=138.357751867269;
+  let a5=-30.6647980661472;
+  let a6=2.50662827745924;
+
+  let b1=-54.4760987982241;
+  let b2=161.585836858041;
+  let b3=-155.698979859887;
+  let b4=66.8013118877197;
+  let b5=-13.2806815528857;
+
+  let q = p - 0.5;
+  let r = q*q;
+
+  return q *
+  (
+    (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6)
+    /
+    (((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1)
+  );
+}
+
+let hit_rate = go_accuracy / 100;
+let fa_rate = commission_rate / 100;
+
+hit_rate = Math.min(Math.max(hit_rate,0.01),0.99);
+fa_rate = Math.min(Math.max(fa_rate,0.01),0.99);
+
+let dprime = z(hit_rate) - z(fa_rate);
+
+let beta =
+  Math.exp(
+    (
+      Math.pow(z(fa_rate),2) -
+      Math.pow(z(hit_rate),2)
+    ) / 2
+  );
+
+    let csv =
+      "被験者ID,試行番号,刺激種類,刺激色,反応時間(ms),正誤,エラー種類\n";
+
+    data.forEach(function(d, i){
+
+      csv +=
+
+participant_id + "," +
+
+(i+1) + "," +
+
+d.stimulus_type + "," +
+
+d.color + "," +
+
+(d.rt ?? "") + "," +
+
+d.correct + "," +
+
+d.error_type +
+
+"\n";
+
+    });
+
+csv += "\n";
+csv += "===== 集計結果 =====\n";
+
+csv += "平均RT," + mean_rt.toFixed(1) + "\n";
+csv += "中央値RT," + median_rt.toFixed(1) + "\n";
+csv += "最小RT," + min_rt.toFixed(1) + "\n";
+csv += "最大RT," + max_rt.toFixed(1) + "\n";
+csv += "有効試行数," + n_trials + "\n";
+
+csv += "RT標準偏差," + sd_rt.toFixed(1) + "\n";
+csv += "RT標準誤差," + se_rt.toFixed(1) + "\n";
+csv += "CV," + cv_rt.toFixed(3) + "\n";
+
+csv += "Go正答率," + go_accuracy.toFixed(1) + "\n";
+csv += "No-Go正答率," + nogo_accuracy.toFixed(1) + "\n";
+
+csv += "Commission Error率," + commission_rate.toFixed(1) + "\n";
+csv += "Omission Error率," + omission_rate.toFixed(1) + "\n";
+
+csv += "d-prime," + dprime.toFixed(2) + "\n";
+csv += "Beta," + beta.toFixed(2) + "\n";
+    
+    let bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+
+let blob = new Blob(
+  [bom, csv],
+  {type:"text/csv;charset=utf-8;"}
+);
+
+    let link = document.createElement("a");
+
+    link.href = URL.createObjectURL(blob);
+
+   link.download =
+participant_id +
+"_GoNoGo結果.csv";
+
+    link.click();
+
+  }
+
+});
+
+let timeline = [];
+
+let participant_id = "";
+
+const participant_form = {
+  type: jsPsychSurveyText,
+  questions: [
+    {
+      prompt: "被験者IDを入力してください",
+      placeholder: "例：P001",
+      required: true
+    }
+  ],
+
+  button_label: "開始",
+
+  on_finish:function(data){
+
+  participant_id =
+    data.response.Q0;
+
+  jsPsych.data.addProperties({
+
+    participant_id:
+      participant_id,
+
+    date:
+      new Date()
+      .toLocaleString("ja-JP")
+
+  });
+
+}
+};
+
+timeline.push(participant_form);
+
+let stimulus_duration = 500;
+let current_mode = "";
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `
+    <h2>Go / No-Go 課題</h2>
+    <p><strong>青い丸</strong>が出たら、スペースキーを押してください。</p>
+    <p><strong>赤い丸</strong>が出たら、何も押さないでください。</p>
+    <p>スペースキーを押すと開始します。</p>
+  `,
+  choices: [" "]
+});
+
+function makeFixation() {
+  return {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: '<div style="font-size:60px;">+</div>',
+    choices: "NO_KEYS",
+    trial_duration: 250
+  };
+}
+
+function makeTrial(stimulus_type, color) {
+  return {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+      <div style="
+        width:160px;
+        height:160px;
+        border-radius:50%;
+        background-color:${color};
+        margin: 100px auto;
+      "></div>
+    `,
+    choices: [" "],
+    trial_duration: stimulus_duration,
+    response_ends_trial: false,
+    data: {
+  task: "go_nogo",
+  mode: current_mode,
+  stimulus_type: stimulus_type,
+  color: color,
+  stimulus_duration: stimulus_duration
+  },
+
+    on_finish: function(data) {
+      if (stimulus_type === "go") {
+        data.correct = data.response !== null;
+      } else {
+        data.correct = data.response === null;
+      }
+
+      if (stimulus_type === "go" && data.response === null) {
+        data.error_type = "omission";
+      } else if (stimulus_type === "nogo" && data.response !== null) {
+        data.error_type = "commission";
+      } else {
+        data.error_type = "none";
+      }
+    }
+  };
+}
+
+function createTrialList(go_count, nogo_count) {
+
+  let trials = [];
+
+  for(let i=0; i<go_count; i++){
+    trials.push(["go","blue"]);
+  }
+
+  for(let i=0; i<nogo_count; i++){
+    trials.push(["nogo","red"]);
+  }
+
+  return jsPsych.randomization.shuffle(trials);
+
+}
+
+let trial_list = [
+  ["go", "blue"], ["go", "blue"], ["go", "blue"], ["go", "blue"],
+  ["go", "blue"], ["go", "blue"], ["go", "blue"], ["go", "blue"],
+  ["nogo", "red"], ["nogo", "red"]
+];
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `
+  <h2>練習試行</h2>
+  <p>青丸ならスペースキー</p>
+  <p>赤丸なら押さない</p>
+  <p>スペースキーで開始</p>
+  `,
+  choices:[" "]
+});
+
+// 練習：20試行、刺激時間500ms
+let practice_trials = createTrialList(7, 3);
+
+// 高難度：150試行、刺激時間500ms
+let main_trials = createTrialList(105, 45);
+
+current_mode = "practice";
+stimulus_duration = 500;
+
+for (let i=0; i<practice_trials.length; i++){
+  timeline.push(makeFixation());
+  timeline.push(makeTrial(practice_trials[i][0], practice_trials[i][1]));
+}
+
+// ここで止まる
+timeline.push({
+
+  type: jsPsychHtmlKeyboardResponse,
+
+  stimulus: `
+    <h2>練習終了</h2>
+
+    <p>
+      本試行を開始します。
+    </p>
+
+    <p>
+      本試行は150試行です。
+    </p>
+
+    <p>
+      青丸ではスペースキーを押してください。
+    </p>
+
+    <p>
+      赤丸では押さないでください。
+    </p>
+
+    <p>
+      準備ができたらスペースキーを押してください。
+    </p>
+  `,
+
+  choices:[" "]
+
+});
+
+current_mode = "main";
+
+stimulus_duration = 500;
+
+for(let i=0;i<main_trials.length;i++){
+
+  timeline.push(
+    makeFixation()
+  );
+
+  timeline.push(
+    makeTrial(
+      main_trials[i][0],
+      main_trials[i][1]
+    )
+  );
+
+}
+
+timeline.push({
+
+  type: jsPsychHtmlKeyboardResponse,
+
+  stimulus: function(){
+
+let data = jsPsych.data.get()
+  .filter({task:"go_nogo"});
+
+let go_data =
+  data.filter({stimulus_type:"go"});
+
+let nogo_data =
+  data.filter({stimulus_type:"nogo"});
+
+let go_rt =
+  go_data
+  .filterCustom(x => x.rt !== null)
+  .select("rt")
+  .values;
+
+if (go_rt.length === 0) {
+  go_rt = [NaN];
+}
+
+let mean_rt =
+  go_rt.reduce((a,b)=>a+b,0)
+  / go_rt.length;
+ 
+let sd_rt =
+Math.sqrt(
+
+  go_rt.reduce(
+    (sum,x)=>
+      sum + Math.pow(x-mean_rt,2),
+    0
+  )
+
+  /(go_rt.length-1)
+
+);
+
+let sorted_rt =
+[...go_rt].sort((a,b)=>a-b);
+
+let median_rt;
+
+if (sorted_rt.length % 2 === 0) {
+  median_rt =
+    (
+      sorted_rt[sorted_rt.length/2 - 1] +
+      sorted_rt[sorted_rt.length/2]
+    ) / 2;
+} else {
+  median_rt =
+    sorted_rt[
+      Math.floor(sorted_rt.length/2)
+    ];
+}
+
+let min_rt =
+Math.min(...go_rt);
+
+let max_rt =
+Math.max(...go_rt);
+
+let n_trials =
+go_rt.length;
+
+let se_rt =
+sd_rt / Math.sqrt(go_rt.length);
+
+let cv_rt =
+sd_rt / mean_rt;
+
+let go_accuracy =
+100 *
+go_data
+.select("correct")
+.mean();
+
+let nogo_accuracy =
+100 *
+nogo_data
+.select("correct")
+.mean();
+
+let commission_rate =
+100 -
+nogo_accuracy;
+
+let omission_rate =
+100 -
+go_accuracy;
+
+function z(p){
+
+  let a1=-39.6968302866538;
+  let a2=220.946098424521;
+  let a3=-275.928510446969;
+  let a4=138.357751867269;
+  let a5=-30.6647980661472;
+  let a6=2.50662827745924;
+
+  let b1=-54.4760987982241;
+  let b2=161.585836858041;
+  let b3=-155.698979859887;
+  let b4=66.8013118877197;
+  let b5=-13.2806815528857;
+
+  let q = p - 0.5;
+  let r = q*q;
+
+  return q *
+  (
+    (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6)
+    /
+    (((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1)
+  );
+}
+
+let hit_rate =
+go_accuracy / 100;
+
+let fa_rate =
+commission_rate / 100;
+
+hit_rate =
+Math.min(
+  Math.max(hit_rate,0.01),
+  0.99
+);
+
+fa_rate =
+Math.min(
+  Math.max(fa_rate,0.01),
+  0.99
+);
+
+let dprime =
+z(hit_rate)
+-
+z(fa_rate);
+
+let beta =
+Math.exp(
+
+  (
+    Math.pow(
+      z(fa_rate),2
+    )
+    -
+    Math.pow(
+      z(hit_rate),2
+    )
+  ) / 2
+
+);
+
+window.mean_rt = mean_rt;
+window.median_rt = median_rt;
+window.min_rt = min_rt;
+window.max_rt = max_rt;
+window.n_trials = n_trials;
+
+window.sd_rt = sd_rt;
+window.se_rt = se_rt;
+window.cv_rt = cv_rt;
+
+window.go_accuracy = go_accuracy;
+window.nogo_accuracy = nogo_accuracy;
+
+window.commission_rate = commission_rate;
+window.omission_rate = omission_rate;
+
+window.dprime = dprime;
+window.beta = beta;
+
+return `
+
+<h2>測定結果</h2>
+
+<p>平均RT : ${mean_rt.toFixed(1)} ms</p>
+
+<p>中央値RT : ${median_rt.toFixed(1)} ms</p>
+
+<p>最小RT : ${min_rt.toFixed(1)} ms</p>
+
+<p>最大RT : ${max_rt.toFixed(1)} ms</p>
+
+<p>有効試行数 : ${n_trials}</p>
+
+<p>RT標準偏差 : ${sd_rt.toFixed(1)}</p>
+
+<p>RT標準誤差 : ${se_rt.toFixed(1)}</p>
+
+<p>CV : ${cv_rt.toFixed(3)}</p>
+
+<p>Go正答率 : ${go_accuracy.toFixed(1)}%</p>
+
+<p>No-Go正答率 : ${nogo_accuracy.toFixed(1)}%</p>
+
+<p>Commission Error率 :
+${commission_rate.toFixed(1)}%</p>
+
+<p>Omission Error率 :
+${omission_rate.toFixed(1)}%</p>
+
+<p>d-prime :
+${dprime.toFixed(2)}</p>
+
+<p>Beta :
+${beta.toFixed(2)}</p>
+
+<p>スペースキーを押すと終了します</p>
+
+`;
+},
+choices:[" "]
+
+});
+
+jsPsych.run(timeline);
+</script>
+</html>
