@@ -515,24 +515,60 @@ function createSDMTTrial(is_practice) {
   };
 }
 
-timeline.push({
-  type: jsPsychHtmlKeyboardResponse,
-  stimulus: `
-    <h2>練習試行</h2>
-    <p>まず10試行練習します。</p>
-    <p>スペースキーを押してください。</p>
-  `,
-  choices: [" "]
-});
+function createBreakScreen(block_number) {
+  return {
+    type: jsPsychHtmlKeyboardResponse,
 
-for (let i = 0; i < 10; i++) {
-  timeline.push(
-    createSDMTTrial(true)
-  );
+    stimulus: function() {
+      return `
+        <h2>本試行 ${block_number} 回目終了</h2>
+
+        <p>
+          次は本試行 ${block_number + 1} 回目です。
+        </p>
+
+        <p>
+          1分間休憩してください。
+        </p>
+
+        <h1>
+          残り <span id="countdown">60</span> 秒
+        </h1>
+
+        <p>
+          60秒経過後、自動的に次の本試行へ進みます。
+        </p>
+      `;
+    },
+
+    choices: "NO_KEYS",
+
+    trial_duration: 60000,
+
+    on_load: function() {
+      let remaining = 60;
+
+      let timer = setInterval(function() {
+        remaining -= 1;
+
+        let countdown =
+          document.getElementById("countdown");
+
+        if (countdown) {
+          countdown.textContent = remaining;
+        }
+
+        if (remaining <= 0) {
+          clearInterval(timer);
+        }
+
+      }, 1000);
+    }
+  };
 }
-
 function addMainBlock(block_number) {
 
+  // 対応表・本試行回を設定
   timeline.push({
     type: jsPsychHtmlKeyboardResponse,
     stimulus: "",
@@ -545,28 +581,39 @@ function addMainBlock(block_number) {
     }
   });
 
-  timeline.push({
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: function() {
-      return `
-        <h2>本試行 ${block_number} 回目</h2>
+  // 1回目だけ開始画面を表示
+  if (block_number === 1) {
+    timeline.push({
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        return `
+          <h2>本試行1回目</h2>
+          <p>本試行は90秒間です。</p>
+          ${keyTableHTML()}
+          <p>スペースキーを押して開始してください。</p>
+        `;
+      },
+      choices: [" "],
+      on_finish: function() {
+        task_start_time = performance.now();
+      }
+    });
+  }
 
-        <p>ここから本試行 ${block_number} 回目を開始します。</p>
-        <p>本試行は90秒間です。</p>
-        <p>この回では、以下の対応表を使用します。</p>
+  // 2回目・3回目は自動開始
+  if (block_number !== 1) {
+    timeline.push({
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: "",
+      choices: "NO_KEYS",
+      trial_duration: 1,
+      on_finish: function() {
+        task_start_time = performance.now();
+      }
+    });
+  }
 
-        ${keyTableHTML()}
-
-        <p>できるだけ速く、正確に回答してください。</p>
-        <p>スペースキーを押すと開始します。</p>
-      `;
-    },
-    choices: [" "],
-    on_finish: function() {
-      task_start_time = performance.now();
-    }
-  });
-
+  // 90秒間の本試行
   timeline.push({
     timeline: [
       createSDMTTrial(false)
@@ -580,19 +627,42 @@ function addMainBlock(block_number) {
     }
   });
 
+  // 1回目・2回目終了後だけ60秒休憩
   if (block_number < 3) {
-    timeline.push({
-      type: jsPsychHtmlKeyboardResponse,
-      stimulus: `
-        <h2>本試行 ${block_number} 回目終了</h2>
-
-        <p>次は本試行 ${block_number + 1} 回目です。</p>
-        <p>準備ができたらスペースキーを押してください。</p>
-      `,
-      choices: [" "]
-    });
+    timeline.push(
+      createBreakScreen(block_number)
+    );
   }
 }
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `
+    <h2>練習試行</h2>
+    <p>まず10試行練習します。</p>
+    <p>スペースキーを押してください。</p>
+  `,
+  choices: [" "]
+});
+
+current_map_name = "practice";
+
+for (let i = 0; i < 10; i++) {
+  timeline.push(
+    createSDMTTrial(true)
+  );
+}
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `
+    <h2>練習終了</h2>
+    <p>ここから本試行を開始します。</p>
+    <p>本試行は90秒間 × 3回です。</p>
+    <p>スペースキーを押してください。</p>
+  `,
+  choices: [" "]
+});
 
 addMainBlock(1);
 addMainBlock(2);
