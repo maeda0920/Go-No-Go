@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>N-back Task</title>
+
+  <script src="https://unpkg.com/jspsych@8.2.1"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0"></script>
+
+  <link href="https://unpkg.com/jspsych@8.2.1/css/jspsych.css" rel="stylesheet" />
+
+  <style>
+    body {
+      background-color: white;
+      color: black;
+      font-family: Arial, sans-serif;
+    }
+    .stimulus {
+      font-size: 80px;
+      font-weight: bold;
+    }
+    .text {
+      font-size: 24px;
+      line-height: 1.8;
+      max-width: 900px;
+      margin: auto;
+    }
+  </style>
+</head>
+
+<body></body>
+
+<script>
+  const jsPsych = initJsPsych({
+    on_finish: function() {
+      const participant_id = jsPsych.data.get().values()[0].response.ID;
+
+      jsPsych.data.addProperties({
+        participant_id: participant_id,
+        task: "2-back"
+      });
+
+      const filename = "nback_" + participant_id + "_" + new Date().toISOString().slice(0,10) + ".csv";
+      jsPsych.data.get().localSave("csv", filename);
+    }
+  });
+
+  const timeline = [];
+
+  let participant_id = "";
+
+  // =========================
+  // 被験者ID入力
+  // =========================
+  const id_input = {
+    type: jsPsychSurveyText,
+    questions: [
+      {
+        prompt: "被験者IDを入力してください",
+        name: "ID",
+        required: true
+      }
+    ],
+    button_label: "開始",
+    on_finish: function(data) {
+      participant_id = data.response.ID;
+    }
+  };
+  timeline.push(id_input);
+
+  // =========================
+  // 説明画面
+  // =========================
+  const instruction = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+      <div class="text">
+        <h2>N-back課題</h2>
+        <p>この課題では、画面中央にアルファベットが1文字ずつ表示されます。</p>
+        <p>現在表示されている文字が、<strong>2つ前に表示された文字と同じかどうか</strong>を判断してください。</p>
+
+        <p><strong>同じ場合：</strong> Jキー</p>
+        <p><strong>違う場合：</strong> Fキー</p>
+
+        <p>できるだけ速く、正確に反応してください。</p>
+        <p>まず練習20試行を行います。</p>
+
+        <p>準備ができたらスペースキーを押してください。</p>
+      </div>
+    `,
+    choices: [" "]
+  };
+  timeline.push(instruction);
+
+  // =========================
+  // N-back刺激作成関数
+  // =========================
+  function generateNBackTrials(num_trials, block_name, target_rate = 0.3) {
+    const letters = ["B", "C", "D", "F", "G", "H", "J", "K", "L", "M", "P", "Q", "R", "S", "T"];
+    const trials = [];
+
+    for (let i = 0; i < num_trials; i++) {
+      let stimulus;
+      let is_target = false;
+
+      if (i >= 2 && Math.random() < target_rate) {
+        stimulus = trials[i - 2].stimulus;
+        is_target = true;
+      } else {
+        do {
+          stimulus = letters[Math.floor(Math.random() * letters.length)];
+        } while (i >= 2 && stimulus === trials[i - 2].stimulus);
+        is_target = false;
+      }
+
+      trials.push({
+        stimulus: stimulus,
+        trial_number: i + 1,
+        block: block_name,
+        is_target: is_target,
+        correct_response: is_target ? "j" : "f"
+      });
+    }
+
+    return trials;
+  }
+
+  // =========================
+  // 試行作成関数
+  // =========================
+  function createNBackBlock(trials) {
+    const block_timeline = [];
+
+    trials.forEach(trial => {
+      block_timeline.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: `<div class="stimulus">${trial.stimulus}</div>`,
+        choices: ["f", "j"],
+        trial_duration: 1500,
+        stimulus_duration: 1000,
+        response_ends_trial: false,
+        data: {
+          block: trial.block,
+          trial_number: trial.trial_number,
+          stimulus: trial.stimulus,
+          is_target: trial.is_target,
+          correct_response: trial.correct_response
+        },
+        on_finish: function(data) {
+          data.correct = jsPsych.pluginAPI.compareKeys(data.response, data.correct_response);
+          data.no_response = data.response === null;
+        }
+      });
+
+      block_timeline.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: "",
+        choices: "NO_KEYS",
+        trial_duration: 500
+      });
+    });
+
+    return block_timeline;
+  }
+
+  // =========================
+  // 練習20試行
+  // =========================
+  const practice_start = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+      <div class="text">
+        <h2>練習試行</h2>
+        <p>これから練習20試行を行います。</p>
+        <p>2つ前と同じ：Jキー<br>2つ前と違う：Fキー</p>
+        <p>スペースキーを押すと始まります。</p>
+      </div>
+    `,
+    choices: [" "]
+  };
+  timeline.push(practice_start);
+
+  const practice_trials = generateNBackTrials(20, "practice");
+  timeline.push(...createNBackBlock(practice_trials));
+
+  // =========================
+  // 練習結果
+  // =========================
+  const practice_result = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: function() {
+      const data = jsPsych.data.get().filter({block: "practice"});
+      const correct = data.filter({correct: true}).count();
+      const total = data.count();
+      const accuracy = Math.round((correct / total) * 100);
+
+      return `
+        <div class="text">
+          <h2>練習結果</h2>
+          <p>正答数：${correct} / ${total}</p>
+          <p>正答率：${accuracy}%</p>
+          <p>次から本試行に入ります。</p>
+          <p>スペースキーを押してください。</p>
+        </div>
+      `;
+    },
+    choices: [" "]
+  };
+  timeline.push(practice_result);
+
+  // =========================
+  // 本試行1 50試行
+  // =========================
+  const main1_start = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+      <div class="text">
+        <h2>本試行1</h2>
+        <p>これから本試行1を行います。</p>
+        <p>50試行です。</p>
+        <p>スペースキーを押すと始まります。</p>
+      </div>
+    `,
+    choices: [" "]
+  };
+  timeline.push(main1_start);
+
+  const main1_trials = generateNBackTrials(50, "main1");
+  timeline.push(...createNBackBlock(main1_trials));
+
+  // =========================
+  // 60秒休憩
+  // =========================
+  const break_trial = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+      <div class="text">
+        <h2>休憩</h2>
+        <p>60秒間休憩してください。</p>
+        <p id="countdown">残り 60 秒</p>
+      </div>
+    `,
+    choices: "NO_KEYS",
+    trial_duration: 60000,
+    on_load: function() {
+      let timeLeft = 60;
+      const countdown = setInterval(function() {
+        timeLeft--;
+        document.getElementById("countdown").innerHTML = "残り " + timeLeft + " 秒";
+        if (timeLeft <= 0) {
+          clearInterval(countdown);
+        }
+      }, 1000);
+    }
+  };
+  timeline.push(break_trial);
+
+  // =========================
+  // 本試行2 50試行
+  // =========================
+  const main2_start = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+      <div class="text">
+        <h2>本試行2</h2>
+        <p>これから本試行2を行います。</p>
+        <p>50試行です。</p>
+        <p>スペースキーを押すと始まります。</p>
+      </div>
+    `,
+    choices: [" "]
+  };
+  timeline.push(main2_start);
+
+  const main2_trials = generateNBackTrials(50, "main2");
+  timeline.push(...createNBackBlock(main2_trials));
+
+  // =========================
+  // 結果表示
+  // =========================
+  const result_display = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: function() {
+      const main_data = jsPsych.data.get().filterCustom(function(trial) {
+        return trial.block === "main1" || trial.block === "main2";
+      });
+
+      const total = main_data.count();
+      const correct = main_data.filter({correct: true}).count();
+      const accuracy = Math.round((correct / total) * 100);
+
+      const target_trials = main_data.filter({is_target: true});
+      const nontarget_trials = main_data.filter({is_target: false});
+
+      const hit = target_trials.filter({correct: true}).count();
+      const miss = target_trials.filter({correct: false}).count();
+      const correct_rejection = nontarget_trials.filter({correct: true}).count();
+      const false_alarm = nontarget_trials.filter({correct: false}).count();
+
+      const rt_data = main_data.filterCustom(function(trial) {
+        return trial.correct === true && trial.rt !== null;
+      });
+
+      const mean_rt = Math.round(rt_data.select("rt").mean());
+
+      return `
+        <div class="text">
+          <h2>結果</h2>
+          <p>本試行の正答数：${correct} / ${total}</p>
+          <p>正答率：${accuracy}%</p>
+          <p>Hit数（ターゲットを正しく検出）：${hit}</p>
+          <p>Miss数（ターゲットを見逃し回数）：${miss}</p>
+          <p>False Alarm数（違う刺激を一致と判断）：${false_alarm}</p>
+          <p>Correct Rejection数（違う刺激を正しく不一致と判断）：${correct_rejection}</p>
+          <p>正答時の平均反応時間：${mean_rt} ms</p>
+
+          <p>スペースキーを押すとCSVファイルが保存され、課題が終了します。</p>
+        </div>
+      `;
+    },
+    choices: [" "]
+  };
+  timeline.push(result_display);
+
+  // =========================
+  // 実行
+  // =========================
+  jsPsych.run(timeline);
+</script>
+</html>
