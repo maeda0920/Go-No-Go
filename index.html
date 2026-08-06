@@ -126,7 +126,7 @@ let beta =
   );
 
     let csv =
-      "被験者ID,試行番号,刺激種類,刺激色,反応時間(ms),正誤,エラー種類\n";
+      "被験者ID,ブロック,試行番号,刺激種類,刺激色,反応時間(ms),正誤,エラー種類\n";
 
     data.forEach(function(d, i){
 
@@ -253,7 +253,7 @@ function makeFixation() {
   };
 }
 
-function makeTrial(stimulus_type, color) {
+function makeTrial(stimulus_type, color, block_number = null) {
   return {
     type: jsPsychHtmlKeyboardResponse,
     stimulus: `
@@ -273,7 +273,8 @@ function makeTrial(stimulus_type, color) {
   mode: current_mode,
   stimulus_type: stimulus_type,
   color: color,
-  stimulus_duration: stimulus_duration
+  stimulus_duration: stimulus_duration,
+   block: block_number
   },
 
     on_finish: function(data) {
@@ -327,70 +328,89 @@ timeline.push({
   choices:[" "]
 });
 
-// 練習：20試行、刺激時間500ms
+// 練習：10試行、刺激時間500ms
 let practice_trials = createTrialList(7, 3);
 
-// 高難度：150試行、刺激時間500ms
-let main_trials = createTrialList(105, 45);
+// 本試行：100試行 × 2ブロック（各ブロック Go 70試行、No-Go 30試行）
+let main_trials_block1 = createTrialList(70, 30);
+let main_trials_block2 = createTrialList(70, 30);
 
 current_mode = "practice";
 stimulus_duration = 500;
 
 for (let i=0; i<practice_trials.length; i++){
   timeline.push(makeFixation());
-  timeline.push(makeTrial(practice_trials[i][0], practice_trials[i][1]));
+  timeline.push(makeTrial(practice_trials[i][0], practice_trials[i][1], "practice"));
 }
 
-// ここで止まる
 timeline.push({
-
   type: jsPsychHtmlKeyboardResponse,
-
   stimulus: `
     <h2>練習終了</h2>
-
-    <p>
-      本試行を開始します。
-    </p>
-
-    <p>
-      本試行は150試行です。
-    </p>
-
-    <p>
-      青丸ではスペースキーを押してください。
-    </p>
-
-    <p>
-      赤丸では押さないでください。
-    </p>
-
-    <p>
-      準備ができたらスペースキーを押してください。
-    </p>
+    <p>これから本試行を開始します。</p>
+    <p>本試行は100試行を2回行います。</p>
+    <p>1回目と2回目の間に60秒間の休憩があります。</p>
+    <p>青い丸ではスペースキーを押し、赤い丸では何も押さないでください。</p>
+    <p>準備ができたらスペースキーを押してください。</p>
   `,
-
   choices:[" "]
-
 });
 
+// 本試行ブロック1
 current_mode = "main";
-
 stimulus_duration = 500;
 
-for(let i=0;i<main_trials.length;i++){
+for(let i=0; i<main_trials_block1.length; i++){
+  timeline.push(makeFixation());
+  timeline.push(makeTrial(main_trials_block1[i][0], main_trials_block1[i][1], 1));
+}
 
-  timeline.push(
-    makeFixation()
-  );
+// 60秒休憩（スキップ不可）
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `
+    <h2>休憩</h2>
+    <p>1回目の本試行が終了しました。</p>
+    <p>60秒間休憩してください。</p>
+    <p>残り <span id="rest-countdown" style="font-size:36px;font-weight:bold;">60</span> 秒</p>
+    <p>休憩終了後、自動的に次の画面へ進みます。</p>
+  `,
+  choices: "NO_KEYS",
+  trial_duration: 60000,
+  data: {task:"rest", rest_duration_ms:60000},
+  on_load: function(){
+    let remaining = 60;
+    const countdown = document.getElementById("rest-countdown");
+    const timer = setInterval(function(){
+      remaining -= 1;
+      if(countdown) countdown.textContent = Math.max(remaining, 0);
+      if(remaining <= 0) clearInterval(timer);
+    }, 1000);
+    window.restCountdownTimer = timer;
+  },
+  on_finish: function(){
+    if(window.restCountdownTimer){
+      clearInterval(window.restCountdownTimer);
+      window.restCountdownTimer = null;
+    }
+  }
+});
 
-  timeline.push(
-    makeTrial(
-      main_trials[i][0],
-      main_trials[i][1]
-    )
-  );
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `
+    <h2>本試行 2回目</h2>
+    <p>これから2回目の100試行を開始します。</p>
+    <p>青い丸ではスペースキーを押し、赤い丸では何も押さないでください。</p>
+    <p>準備ができたらスペースキーを押してください。</p>
+  `,
+  choices:[" "]
+});
 
+// 本試行ブロック2
+for(let i=0; i<main_trials_block2.length; i++){
+  timeline.push(makeFixation());
+  timeline.push(makeTrial(main_trials_block2[i][0], main_trials_block2[i][1], 2));
 }
 
 timeline.push({
