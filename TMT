@@ -1,0 +1,2356 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0,
+               maximum-scale=1.0, user-scalable=no">
+
+<title>TMT-A / TMT-B</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont,
+                 "Helvetica Neue", Arial, sans-serif;
+    background: white;
+    color: #111;
+    overscroll-behavior: none;
+  }
+
+  body {
+    touch-action: manipulation;
+  }
+
+  #app {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .screen {
+    width: min(92vw, 760px);
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 34px;
+  }
+
+  h2 {
+    font-size: 30px;
+  }
+
+  p {
+    font-size: 22px;
+    line-height: 1.6;
+  }
+
+  input {
+    font-size: 24px;
+    padding: 12px;
+    width: 80%;
+    max-width: 420px;
+  }
+
+  button {
+    font-size: 24px;
+    padding: 14px 30px;
+    margin: 16px;
+    border-radius: 10px;
+    border: 1px solid #555;
+    background: #fff;
+  }
+
+  #taskHeader {
+    width: 100%;
+    text-align: center;
+    height: 72px;
+  }
+
+  #taskTitle {
+    font-size: 28px;
+    font-weight: bold;
+  }
+
+  #taskMessage {
+    font-size: 18px;
+    min-height: 26px;
+  }
+
+  #canvasWrap {
+    position: relative;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  #tmtCanvas {
+    background: white;
+    border: 1px solid #bbb;
+    touch-action: none;
+    display: block;
+  }
+
+  .countdown {
+    font-size: 82px;
+    font-weight: bold;
+    margin: 20px 0;
+  }
+
+  .small {
+    font-size: 18px;
+  }
+
+  .resultTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 17px;
+    margin-top: 20px;
+  }
+
+  .resultTable th,
+  .resultTable td {
+    border: 1px solid #aaa;
+    padding: 8px;
+  }
+
+  #orientationWarning {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: white;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+    font-size: 26px;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="orientationWarning">
+  <div>
+    <h2>iPadを縦向きにしてください</h2>
+    <p>この課題は縦向きで実施します。</p>
+  </div>
+</div>
+
+<div id="app"></div>
+
+<script>
+
+/* =========================================================
+   研究設定
+   ========================================================= */
+
+// TMT-A → TMT-B の休憩
+const REST_A_TO_B_SEC = 30;
+
+// TMT-B → 次のTMT-A の休憩
+const REST_B_TO_A_SEC = 60;
+
+// Apple Pencilのみで本番を行う
+const REQUIRE_PEN = true;
+
+// PCで動作確認したい場合だけ true にする。
+// iPad本番では false のまま使用。
+const ALLOW_MOUSE_FOR_DEBUG = false;
+
+// ターゲット円
+const TARGET_RADIUS = 25;
+
+// 線の太さ
+const LINE_WIDTH = 4;
+
+
+/* =========================================================
+   基本情報
+   ========================================================= */
+
+let participantID = "";
+
+let currentTask = null;
+
+let results = [];
+
+let eventLog = [];
+
+
+/* =========================================================
+   TMT-A / B ラベル
+   ========================================================= */
+
+const labelsA = Array.from(
+  {length: 25},
+  (_, i) => String(i + 1)
+);
+
+const labelsB = [
+  "1","A",
+  "2","B",
+  "3","C",
+  "4","D",
+  "5","E",
+  "6","F",
+  "7","G",
+  "8","H",
+  "9","I",
+  "10","J",
+  "11","K",
+  "12","L",
+  "13"
+];
+
+
+/* =========================================================
+   基本配置
+   normalized coordinates: 0〜1
+   ========================================================= */
+
+/*
+  A1/A2/A3は同一配置の
+  ・そのまま
+  ・左右反転
+  ・上下反転
+  を使用。
+
+  距離構造は完全に同じなので、
+  3回の難易度をできるだけ揃える。
+*/
+
+const baseLayoutA = [
+  [0.12,0.11],
+  [0.48,0.08],
+  [0.79,0.14],
+  [0.62,0.23],
+  [0.25,0.20],
+
+  [0.10,0.34],
+  [0.42,0.31],
+  [0.83,0.32],
+  [0.69,0.43],
+  [0.31,0.42],
+
+  [0.14,0.53],
+  [0.48,0.51],
+  [0.86,0.54],
+  [0.65,0.62],
+  [0.28,0.61],
+
+  [0.08,0.72],
+  [0.40,0.70],
+  [0.80,0.71],
+  [0.70,0.81],
+  [0.34,0.80],
+
+  [0.14,0.90],
+  [0.49,0.88],
+  [0.86,0.89],
+  [0.62,0.96],
+  [0.29,0.95]
+];
+
+
+/*
+  BはAとは別の基本配置。
+  B1/B2/B3も同様に
+  反転だけで3条件を作る。
+*/
+
+const baseLayoutB = [
+  [0.14,0.09],
+  [0.60,0.10],
+  [0.83,0.18],
+  [0.36,0.19],
+  [0.10,0.29],
+
+  [0.55,0.29],
+  [0.87,0.36],
+  [0.41,0.38],
+  [0.15,0.47],
+  [0.68,0.47],
+
+  [0.86,0.57],
+  [0.35,0.55],
+  [0.09,0.65],
+  [0.55,0.65],
+  [0.80,0.74],
+
+  [0.31,0.74],
+  [0.12,0.83],
+  [0.59,0.84],
+  [0.86,0.91],
+  [0.40,0.93],
+
+  [0.20,0.58],
+  [0.73,0.25],
+  [0.24,0.35],
+  [0.73,0.63],
+  [0.48,0.47]
+];
+
+
+/* =========================================================
+   練習用
+   ========================================================= */
+
+const practiceLabelsA = [
+  "1","2","3","4","5","6","7","8"
+];
+
+const practiceLayoutA = [
+  [0.18,0.15],
+  [0.70,0.16],
+  [0.42,0.31],
+  [0.82,0.45],
+  [0.24,0.50],
+  [0.63,0.64],
+  [0.18,0.78],
+  [0.72,0.86]
+];
+
+const practiceLabelsB = [
+  "1","A","2","B","3","C","4","D"
+];
+
+const practiceLayoutB = [
+  [0.18,0.15],
+  [0.72,0.17],
+  [0.43,0.31],
+  [0.80,0.47],
+  [0.23,0.49],
+  [0.64,0.65],
+  [0.18,0.80],
+  [0.73,0.86]
+];
+
+
+/* =========================================================
+   配置変換
+   ========================================================= */
+
+function transformLayout(layout, repetition) {
+
+  if (repetition === 1) {
+    return layout.map(([x,y]) => [x,y]);
+  }
+
+  // 左右反転
+  if (repetition === 2) {
+    return layout.map(([x,y]) => [1-x,y]);
+  }
+
+  // 上下反転
+  if (repetition === 3) {
+    return layout.map(([x,y]) => [x,1-y]);
+  }
+
+  return layout;
+}
+
+
+/* =========================================================
+   画面方向
+   ========================================================= */
+
+function checkOrientation() {
+
+  const warning =
+    document.getElementById("orientationWarning");
+
+  if (window.innerWidth > window.innerHeight) {
+    warning.style.display = "flex";
+  } else {
+    warning.style.display = "none";
+  }
+}
+
+window.addEventListener(
+  "resize",
+  checkOrientation
+);
+
+
+/* =========================================================
+   被験者ID
+   ========================================================= */
+
+function showParticipantScreen() {
+
+  document.getElementById("app").innerHTML = `
+    <div class="screen">
+
+      <h1>TMT-A / TMT-B</h1>
+
+      <p>
+        被験者IDを入力してください。
+      </p>
+
+      <input
+        id="participantInput"
+        type="text"
+        placeholder="例：P001"
+        autocomplete="off"
+      >
+
+      <br>
+
+      <button id="participantButton">
+        次へ
+      </button>
+
+    </div>
+  `;
+
+  document
+    .getElementById("participantButton")
+    .addEventListener("click", function() {
+
+      const value =
+        document
+          .getElementById("participantInput")
+          .value
+          .trim();
+
+      if (!value) {
+        alert("被験者IDを入力してください。");
+        return;
+      }
+
+      participantID = value;
+
+      showInstruction();
+    });
+}
+
+
+/* =========================================================
+   説明
+   ========================================================= */
+
+function showInstruction() {
+
+  document.getElementById("app").innerHTML = `
+    <div class="screen">
+
+      <h1>TMT-A / TMT-B</h1>
+
+      <p>
+        この課題はApple Pencilを使用します。
+      </p>
+
+      <p>
+        <strong>TMT-A</strong><br>
+        1 → 2 → 3 → … → 25
+      </p>
+
+      <p>
+        <strong>TMT-B</strong><br>
+        1 → A → 2 → B → 3 → C → …
+      </p>
+
+      <p>
+        Apple Pencilをできるだけ画面から離さず、
+        正しい順序で線をつないでください。
+      </p>
+
+      <p>
+        間違ったターゲットに入った場合も
+        タイマーは停止しません。
+      </p>
+
+      <p>
+        TMT-A → TMT-Bを3回実施します。
+      </p>
+
+      <button id="practiceButton">
+        練習を開始
+      </button>
+
+    </div>
+  `;
+
+  document
+    .getElementById("practiceButton")
+    .addEventListener(
+      "click",
+      startPracticeA
+    );
+}
+
+
+/* =========================================================
+   練習
+   ========================================================= */
+
+function startPracticeA() {
+
+  startTask({
+    type: "A",
+    repetition: 0,
+    practice: true,
+    labels: practiceLabelsA,
+    layout: practiceLayoutA,
+
+    onComplete: function() {
+
+      document.getElementById("app").innerHTML = `
+        <div class="screen">
+
+          <h2>TMT-A 練習終了</h2>
+
+          <p>
+            続いてTMT-Bの練習を行います。
+          </p>
+
+          <button id="practiceBButton">
+            TMT-B練習へ
+          </button>
+
+        </div>
+      `;
+
+      document
+        .getElementById("practiceBButton")
+        .addEventListener(
+          "click",
+          startPracticeB
+        );
+    }
+  });
+}
+
+
+function startPracticeB() {
+
+  startTask({
+    type: "B",
+    repetition: 0,
+    practice: true,
+    labels: practiceLabelsB,
+    layout: practiceLayoutB,
+
+    onComplete: function() {
+
+      document.getElementById("app").innerHTML = `
+        <div class="screen">
+
+          <h2>練習終了</h2>
+
+          <p>
+            ここから本試行を開始します。
+          </p>
+
+          <p>
+            TMT-A → TMT-Bを3回実施します。
+          </p>
+
+          <button id="mainStartButton">
+            本試行開始
+          </button>
+
+        </div>
+      `;
+
+      document
+        .getElementById("mainStartButton")
+        .addEventListener(
+          "click",
+          function() {
+            startMainTask("A", 1);
+          }
+        );
+    }
+  });
+}
+
+
+/* =========================================================
+   本試行
+   ========================================================= */
+
+function startMainTask(type, repetition) {
+
+  const base =
+    type === "A"
+      ? baseLayoutA
+      : baseLayoutB;
+
+  const labels =
+    type === "A"
+      ? labelsA
+      : labelsB;
+
+  const layout =
+    transformLayout(
+      base,
+      repetition
+    );
+
+  startTask({
+
+    type: type,
+
+    repetition: repetition,
+
+    practice: false,
+
+    labels: labels,
+
+    layout: layout,
+
+    onComplete: function(result) {
+
+      results.push(result);
+
+      /* A終了 → Bへ */
+      if (type === "A") {
+
+        showBreak(
+          REST_A_TO_B_SEC,
+          `TMT-A ${repetition}回目終了`,
+          `次はTMT-B ${repetition}回目です`,
+          function() {
+            startMainTask(
+              "B",
+              repetition
+            );
+          }
+        );
+
+        return;
+      }
+
+      /* B1・B2 → 次のA */
+      if (
+        type === "B" &&
+        repetition < 3
+      ) {
+
+        showBreak(
+          REST_B_TO_A_SEC,
+          `TMT-B ${repetition}回目終了`,
+          `次はTMT-A ${repetition + 1}回目です`,
+          function() {
+            startMainTask(
+              "A",
+              repetition + 1
+            );
+          }
+        );
+
+        return;
+      }
+
+      /* B3終了 */
+      showResults();
+    }
+  });
+}
+
+
+/* =========================================================
+   休憩
+   ========================================================= */
+
+function showBreak(
+  seconds,
+  title,
+  nextText,
+  callback
+) {
+
+  document.getElementById("app").innerHTML = `
+    <div class="screen">
+
+      <h2>${title}</h2>
+
+      <p>${nextText}</p>
+
+      <p>
+        休憩してください。
+      </p>
+
+      <div
+        id="breakCountdown"
+        class="countdown"
+      >
+        ${seconds}
+      </div>
+
+      <p>
+        秒
+      </p>
+
+      <p class="small">
+        0秒になると自動的に次の課題を開始します。
+      </p>
+
+    </div>
+  `;
+
+  let remaining = seconds;
+
+  const interval =
+    setInterval(function() {
+
+      remaining -= 1;
+
+      const element =
+        document.getElementById(
+          "breakCountdown"
+        );
+
+      if (element) {
+        element.textContent =
+          remaining;
+      }
+
+      if (remaining <= 0) {
+
+        clearInterval(interval);
+
+        callback();
+      }
+
+    }, 1000);
+}
+
+
+/* =========================================================
+   TMT課題本体
+   ========================================================= */
+
+function startTask(config) {
+
+  const {
+    type,
+    repetition,
+    practice,
+    labels,
+    layout,
+    onComplete
+  } = config;
+
+  document.getElementById("app").innerHTML = `
+    <div id="taskHeader">
+
+      <div id="taskTitle">
+        ${
+          practice
+            ? `TMT-${type} 練習`
+            : `TMT-${type} ${repetition}回目`
+        }
+      </div>
+
+      <div id="taskMessage">
+        Apple Pencilで
+        ${
+          type === "A"
+            ? "数字を順番に"
+            : "数字と文字を交互に"
+        }
+        つないでください
+      </div>
+
+    </div>
+
+    <div id="canvasWrap">
+      <canvas id="tmtCanvas"></canvas>
+    </div>
+  `;
+
+  const canvas =
+    document.getElementById(
+      "tmtCanvas"
+    );
+
+  const ctx =
+    canvas.getContext("2d");
+
+  /*
+    iPad縦向きに合わせたサイズ
+  */
+
+  const cssWidth =
+    Math.min(
+      window.innerWidth - 24,
+      760
+    );
+
+  const cssHeight =
+    Math.min(
+      window.innerHeight - 105,
+      1000
+    );
+
+  const dpr =
+    window.devicePixelRatio || 1;
+
+  canvas.style.width =
+    cssWidth + "px";
+
+  canvas.style.height =
+    cssHeight + "px";
+
+  canvas.width =
+    cssWidth * dpr;
+
+  canvas.height =
+    cssHeight * dpr;
+
+  ctx.scale(dpr,dpr);
+
+
+  /* -----------------------------------------
+     実座標へ変換
+     ----------------------------------------- */
+
+  const marginX = 50;
+  const marginY = 50;
+
+  const points =
+    layout.map(
+      ([x,y], index) => ({
+        x:
+          marginX +
+          x *
+          (cssWidth - marginX * 2),
+
+        y:
+          marginY +
+          y *
+          (cssHeight - marginY * 2),
+
+        label:
+          labels[index],
+
+        index:
+          index
+      })
+    );
+
+
+  /* -----------------------------------------
+     状態
+     ----------------------------------------- */
+
+  let expectedIndex = 0;
+
+  let completed = false;
+
+  let drawing = false;
+
+  let started = false;
+
+  let taskStart = 0;
+
+  let completionTime = 0;
+
+  let errorCount = 0;
+
+  let penLiftCount = 0;
+
+  let totalDistance = 0;
+
+  let penDownDuration = 0;
+
+  let penDownStart = null;
+
+  let lastPoint = null;
+
+  let activeWrongTarget = null;
+
+  let segments = [];
+
+  let currentSegment = [];
+
+  let targetArrivals = [];
+
+
+  /* -----------------------------------------
+     描画
+     ----------------------------------------- */
+
+  function drawScene() {
+
+    ctx.clearRect(
+      0,
+      0,
+      cssWidth,
+      cssHeight
+    );
+
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = LINE_WIDTH;
+    ctx.strokeStyle = "#111";
+
+
+    /* 完了した線 */
+
+    segments.forEach(segment => {
+
+      if (segment.length < 2) {
+        return;
+      }
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        segment[0].x,
+        segment[0].y
+      );
+
+      for (
+        let i = 1;
+        i < segment.length;
+        i++
+      ) {
+
+        ctx.lineTo(
+          segment[i].x,
+          segment[i].y
+        );
+      }
+
+      ctx.stroke();
+    });
+
+
+    /* 現在描画中の線 */
+
+    if (currentSegment.length > 1) {
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        currentSegment[0].x,
+        currentSegment[0].y
+      );
+
+      for (
+        let i = 1;
+        i < currentSegment.length;
+        i++
+      ) {
+
+        ctx.lineTo(
+          currentSegment[i].x,
+          currentSegment[i].y
+        );
+      }
+
+      ctx.stroke();
+    }
+
+
+    /* ターゲット */
+
+    points.forEach(
+      (point,index) => {
+
+        ctx.beginPath();
+
+        ctx.arc(
+          point.x,
+          point.y,
+          TARGET_RADIUS,
+          0,
+          Math.PI * 2
+        );
+
+        /*
+          完了した円は薄くする
+        */
+
+        if (index < expectedIndex) {
+          ctx.fillStyle = "#f0f0f0";
+        } else {
+          ctx.fillStyle = "white";
+        }
+
+        ctx.fill();
+
+        ctx.strokeStyle = "#111";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = "#111";
+
+        let fontSize = 19;
+
+        if (
+          point.label.length >= 2
+        ) {
+          fontSize = 16;
+        }
+
+        ctx.font =
+          `bold ${fontSize}px Arial`;
+
+        ctx.textAlign =
+          "center";
+
+        ctx.textBaseline =
+          "middle";
+
+        ctx.fillText(
+          point.label,
+          point.x,
+          point.y
+        );
+      }
+    );
+  }
+
+
+  drawScene();
+
+
+  /* -----------------------------------------
+     Pointer位置
+     ----------------------------------------- */
+
+  function getPointerPosition(e) {
+
+    const rect =
+      canvas.getBoundingClientRect();
+
+    return {
+      x:
+        e.clientX -
+        rect.left,
+
+      y:
+        e.clientY -
+        rect.top
+    };
+  }
+
+
+  /* -----------------------------------------
+     円判定
+     ----------------------------------------- */
+
+  function findTargetAt(x,y) {
+
+    for (
+      let i = 0;
+      i < points.length;
+      i++
+    ) {
+
+      const dx =
+        x - points[i].x;
+
+      const dy =
+        y - points[i].y;
+
+      const distance =
+        Math.sqrt(
+          dx*dx + dy*dy
+        );
+
+      if (
+        distance <=
+        TARGET_RADIUS
+      ) {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+
+  /* -----------------------------------------
+     Apple Pencil判定
+     ----------------------------------------- */
+
+  function pointerAllowed(e) {
+
+    if (
+      e.pointerType === "pen"
+    ) {
+      return true;
+    }
+
+    if (
+      ALLOW_MOUSE_FOR_DEBUG &&
+      e.pointerType === "mouse"
+    ) {
+      return true;
+    }
+
+    /*
+      Apple PencilがpointerTypeをpenとして
+      正常に報告するiPadではここには来ない。
+    */
+
+    return !REQUIRE_PEN;
+  }
+
+
+  /* -----------------------------------------
+     イベントログ
+     ----------------------------------------- */
+
+  function logEvent(
+    eventType,
+    extra={}
+  ) {
+
+    if (practice) {
+      return;
+    }
+
+    eventLog.push({
+
+      participant_id:
+        participantID,
+
+      test:
+        type,
+
+      repetition:
+        repetition,
+
+      event:
+        eventType,
+
+      elapsed_ms:
+        started
+          ? performance.now() -
+            taskStart
+          : 0,
+
+      ...extra
+    });
+  }
+
+
+  /* -----------------------------------------
+     正しいターゲット到達
+     ----------------------------------------- */
+
+  function registerCorrectTarget(
+    index
+  ) {
+
+    const point =
+      points[index];
+
+    const elapsed =
+      performance.now() -
+      taskStart;
+
+    targetArrivals.push({
+      order: index + 1,
+      label: point.label,
+      elapsed_ms: elapsed,
+      x: point.x,
+      y: point.y
+    });
+
+    logEvent(
+      "target_hit",
+      {
+        target_order:
+          index + 1,
+
+        target_label:
+          point.label,
+
+        x:
+          point.x,
+
+        y:
+          point.y
+      }
+    );
+
+    expectedIndex += 1;
+
+    /*
+      全ターゲット完了
+    */
+
+    if (
+      expectedIndex >=
+      points.length
+    ) {
+
+      completed = true;
+
+      completionTime =
+        performance.now() -
+        taskStart;
+
+      if (
+        drawing &&
+        penDownStart !== null
+      ) {
+
+        penDownDuration +=
+          performance.now() -
+          penDownStart;
+
+        penDownStart = null;
+      }
+
+      drawing = false;
+
+      if (
+        currentSegment.length > 0
+      ) {
+        segments.push(
+          currentSegment
+        );
+      }
+
+      currentSegment = [];
+
+      drawScene();
+
+      setTimeout(
+        finishTask,
+        300
+      );
+    }
+  }
+
+
+  /* -----------------------------------------
+     誤反応
+     ----------------------------------------- */
+
+  function registerError(
+    targetIndex
+  ) {
+
+    if (
+      targetIndex ===
+      activeWrongTarget
+    ) {
+      return;
+    }
+
+    activeWrongTarget =
+      targetIndex;
+
+    errorCount += 1;
+
+    logEvent(
+      "error",
+      {
+        expected_label:
+          points[
+            expectedIndex
+          ]?.label || "",
+
+        touched_label:
+          points[
+            targetIndex
+          ]?.label || ""
+      }
+    );
+
+    const message =
+      document.getElementById(
+        "taskMessage"
+      );
+
+    if (message) {
+
+      message.textContent =
+        "順番が違います。直前の正しい位置から続けてください。";
+
+      setTimeout(
+        function() {
+
+          if (
+            document.getElementById(
+              "taskMessage"
+            )
+          ) {
+
+            document
+              .getElementById(
+                "taskMessage"
+              )
+              .textContent =
+                "Apple Pencilで順番につないでください";
+          }
+
+        },
+        900
+      );
+    }
+  }
+
+
+  /* -----------------------------------------
+     Pointer Down
+     ----------------------------------------- */
+
+  canvas.addEventListener(
+    "pointerdown",
+    function(e) {
+
+      e.preventDefault();
+
+      if (
+        completed ||
+        !pointerAllowed(e)
+      ) {
+        return;
+      }
+
+      canvas.setPointerCapture(
+        e.pointerId
+      );
+
+      const pos =
+        getPointerPosition(e);
+
+      const targetIndex =
+        findTargetAt(
+          pos.x,
+          pos.y
+        );
+
+
+      /*
+        課題開始前：
+        最初のターゲットからのみ開始
+      */
+
+      if (!started) {
+
+        if (targetIndex !== 0) {
+
+          const message =
+            document.getElementById(
+              "taskMessage"
+            );
+
+          if (message) {
+            message.textContent =
+              `最初は ${points[0].label} から開始してください`;
+          }
+
+          return;
+        }
+
+        started = true;
+
+        taskStart =
+          performance.now();
+
+        drawing = true;
+
+        penDownStart =
+          performance.now();
+
+        currentSegment = [
+          {
+            x: points[0].x,
+            y: points[0].y
+          }
+        ];
+
+        lastPoint = {
+          x:
+            points[0].x,
+
+          y:
+            points[0].y
+        };
+
+        registerCorrectTarget(0);
+
+        drawScene();
+
+        return;
+      }
+
+
+      /*
+        離筆後の再開：
+        直前に到達した正しい円から
+        再開してもらう
+      */
+
+      const previousIndex =
+        expectedIndex - 1;
+
+      if (
+        previousIndex >= 0 &&
+        targetIndex !==
+        previousIndex
+      ) {
+
+        const message =
+          document.getElementById(
+            "taskMessage"
+          );
+
+        if (message) {
+
+          message.textContent =
+            `直前の ${points[previousIndex].label} から再開してください`;
+        }
+
+        return;
+      }
+
+
+      drawing = true;
+
+      penDownStart =
+        performance.now();
+
+      currentSegment = [
+        {
+          x:
+            points[previousIndex].x,
+
+          y:
+            points[previousIndex].y
+        }
+      ];
+
+      lastPoint = {
+        x:
+          points[previousIndex].x,
+
+        y:
+          points[previousIndex].y
+      };
+    }
+  );
+
+
+  /* -----------------------------------------
+     Pointer Move
+     ----------------------------------------- */
+
+  canvas.addEventListener(
+    "pointermove",
+    function(e) {
+
+      e.preventDefault();
+
+      if (
+        !drawing ||
+        completed ||
+        !pointerAllowed(e)
+      ) {
+        return;
+      }
+
+      const pos =
+        getPointerPosition(e);
+
+      /*
+        距離計算
+      */
+
+      if (lastPoint) {
+
+        const dx =
+          pos.x -
+          lastPoint.x;
+
+        const dy =
+          pos.y -
+          lastPoint.y;
+
+        const dist =
+          Math.sqrt(
+            dx*dx + dy*dy
+          );
+
+        /*
+          細かすぎるポイントを削減
+        */
+
+        if (dist >= 3) {
+
+          totalDistance +=
+            dist;
+
+          currentSegment.push({
+            x: pos.x,
+            y: pos.y
+          });
+
+          lastPoint = {
+            x: pos.x,
+            y: pos.y
+          };
+        }
+      }
+
+
+      /*
+        ターゲット判定
+      */
+
+      const targetIndex =
+        findTargetAt(
+          pos.x,
+          pos.y
+        );
+
+
+      if (
+        targetIndex === -1
+      ) {
+
+        activeWrongTarget =
+          null;
+
+      } else if (
+        targetIndex ===
+        expectedIndex
+      ) {
+
+        activeWrongTarget =
+          null;
+
+        registerCorrectTarget(
+          targetIndex
+        );
+
+      } else if (
+        targetIndex >
+        expectedIndex
+      ) {
+
+        registerError(
+          targetIndex
+        );
+      }
+
+
+      drawScene();
+    }
+  );
+
+
+  /* -----------------------------------------
+     Pencil Up
+     ----------------------------------------- */
+
+  function pointerEnd(e) {
+
+    e.preventDefault();
+
+    if (
+      !drawing ||
+      completed
+    ) {
+      return;
+    }
+
+    drawing = false;
+
+    if (
+      penDownStart !== null
+    ) {
+
+      penDownDuration +=
+        performance.now() -
+        penDownStart;
+
+      penDownStart = null;
+    }
+
+    if (
+      currentSegment.length >
+      0
+    ) {
+
+      segments.push(
+        currentSegment
+      );
+    }
+
+    currentSegment = [];
+
+    lastPoint = null;
+
+
+    /*
+      最後のターゲット到達後は
+      registerCorrectTarget()内で
+      completed=trueになるので
+      ここには来ない。
+
+      よって途中離筆だけを数える。
+    */
+
+    penLiftCount += 1;
+
+    logEvent(
+      "pen_lift",
+      {
+        pen_lift_count:
+          penLiftCount
+      }
+    );
+
+    drawScene();
+  }
+
+
+  canvas.addEventListener(
+    "pointerup",
+    pointerEnd
+  );
+
+  canvas.addEventListener(
+    "pointercancel",
+    pointerEnd
+  );
+
+
+  /* -----------------------------------------
+     終了処理
+     ----------------------------------------- */
+
+  function finishTask() {
+
+    /*
+      練習では解析対象にしない
+    */
+
+    if (practice) {
+
+      onComplete();
+
+      return;
+    }
+
+
+    const averagePenSpeed =
+      penDownDuration > 0
+        ? totalDistance /
+          (
+            penDownDuration /
+            1000
+          )
+        : 0;
+
+
+    const result = {
+
+      participant_id:
+        participantID,
+
+      test:
+        type,
+
+      repetition:
+        repetition,
+
+      completion_ms:
+        completionTime,
+
+      completion_sec:
+        completionTime / 1000,
+
+      errors:
+        errorCount,
+
+      pen_lifts:
+        penLiftCount,
+
+      total_distance_px:
+        totalDistance,
+
+      pen_down_ms:
+        penDownDuration,
+
+      average_pen_speed_px_sec:
+        averagePenSpeed,
+
+      target_arrivals:
+        targetArrivals
+    };
+
+
+    onComplete(
+      result
+    );
+  }
+}
+
+
+/* =========================================================
+   結果
+   ========================================================= */
+
+function getResult(
+  type,
+  repetition
+) {
+
+  return results.find(
+    r =>
+      r.test === type &&
+      r.repetition === repetition
+  );
+}
+
+
+function mean(values) {
+
+  const valid =
+    values.filter(
+      v =>
+        Number.isFinite(v)
+    );
+
+  if (valid.length === 0) {
+    return NaN;
+  }
+
+  return (
+    valid.reduce(
+      (a,b) => a+b,
+      0
+    ) /
+    valid.length
+  );
+}
+
+
+function format(
+  value,
+  digits=2
+) {
+
+  if (
+    !Number.isFinite(value)
+  ) {
+    return "";
+  }
+
+  return value.toFixed(
+    digits
+  );
+}
+
+
+function showResults() {
+
+  const rows = [];
+
+  for (
+    let rep = 1;
+    rep <= 3;
+    rep++
+  ) {
+
+    const A =
+      getResult(
+        "A",
+        rep
+      );
+
+    const B =
+      getResult(
+        "B",
+        rep
+      );
+
+    rows.push({
+      repetition:
+        rep,
+
+      A:
+        A,
+
+      B:
+        B,
+
+      difference:
+        B.completion_sec -
+        A.completion_sec,
+
+      ratio:
+        B.completion_sec /
+        A.completion_sec
+    });
+  }
+
+
+  const meanA =
+    mean(
+      rows.map(
+        r =>
+          r.A.completion_sec
+      )
+    );
+
+  const meanB =
+    mean(
+      rows.map(
+        r =>
+          r.B.completion_sec
+      )
+    );
+
+  const meanDifference =
+    mean(
+      rows.map(
+        r =>
+          r.difference
+      )
+    );
+
+  const meanRatio =
+    mean(
+      rows.map(
+        r =>
+          r.ratio
+      )
+    );
+
+
+  document.getElementById(
+    "app"
+  ).innerHTML = `
+    <div class="screen">
+
+      <h2>測定結果</h2>
+
+      <table class="resultTable">
+
+        <tr>
+          <th>回</th>
+          <th>A時間</th>
+          <th>B時間</th>
+          <th>B−A</th>
+          <th>B/A</th>
+          <th>Aエラー</th>
+          <th>Bエラー</th>
+          <th>A離筆</th>
+          <th>B離筆</th>
+        </tr>
+
+        ${
+          rows.map(
+            r => `
+              <tr>
+
+                <td>
+                  ${r.repetition}
+                </td>
+
+                <td>
+                  ${format(
+                    r.A.completion_sec,
+                    2
+                  )}
+                </td>
+
+                <td>
+                  ${format(
+                    r.B.completion_sec,
+                    2
+                  )}
+                </td>
+
+                <td>
+                  ${format(
+                    r.difference,
+                    2
+                  )}
+                </td>
+
+                <td>
+                  ${format(
+                    r.ratio,
+                    3
+                  )}
+                </td>
+
+                <td>
+                  ${r.A.errors}
+                </td>
+
+                <td>
+                  ${r.B.errors}
+                </td>
+
+                <td>
+                  ${r.A.pen_lifts}
+                </td>
+
+                <td>
+                  ${r.B.pen_lifts}
+                </td>
+
+              </tr>
+            `
+          ).join("")
+        }
+
+      </table>
+
+      <h3>3回平均</h3>
+
+      <p>
+        TMT-A平均：
+        ${format(meanA,2)} 秒
+      </p>
+
+      <p>
+        TMT-B平均：
+        ${format(meanB,2)} 秒
+      </p>
+
+      <p>
+        B−A平均：
+        ${format(
+          meanDifference,
+          2
+        )} 秒
+      </p>
+
+      <p>
+        B/A平均：
+        ${format(
+          meanRatio,
+          3
+        )}
+      </p>
+
+      <button id="downloadButton">
+        CSVを保存して終了
+      </button>
+
+    </div>
+  `;
+
+
+  document
+    .getElementById(
+      "downloadButton"
+    )
+    .addEventListener(
+      "click",
+      downloadCSV
+    );
+}
+
+
+/* =========================================================
+   CSV
+   ========================================================= */
+
+function csvEscape(value) {
+
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return "";
+  }
+
+  let text =
+    String(value);
+
+  if (
+    text.includes(",") ||
+    text.includes('"') ||
+    text.includes("\n")
+  ) {
+
+    text =
+      '"' +
+      text.replace(
+        /"/g,
+        '""'
+      ) +
+      '"';
+  }
+
+  return text;
+}
+
+
+function downloadCSV() {
+
+  let csv = "";
+
+  /* -----------------------------------------
+     Summary
+     ----------------------------------------- */
+
+  csv +=
+    "===== TMT集計結果 =====\n";
+
+  csv +=
+    "被験者ID,回,TMT-A時間(秒),TMT-B時間(秒),B-A(秒),B/A,Aエラー数,Bエラー数,A離筆回数,B離筆回数,A総描画距離(px),B総描画距離(px),A平均描画速度(px/秒),B平均描画速度(px/秒)\n";
+
+
+  for (
+    let rep = 1;
+    rep <= 3;
+    rep++
+  ) {
+
+    const A =
+      getResult(
+        "A",
+        rep
+      );
+
+    const B =
+      getResult(
+        "B",
+        rep
+      );
+
+    csv += [
+      participantID,
+      rep,
+
+      format(
+        A.completion_sec,
+        3
+      ),
+
+      format(
+        B.completion_sec,
+        3
+      ),
+
+      format(
+        B.completion_sec -
+        A.completion_sec,
+        3
+      ),
+
+      format(
+        B.completion_sec /
+        A.completion_sec,
+        4
+      ),
+
+      A.errors,
+      B.errors,
+
+      A.pen_lifts,
+      B.pen_lifts,
+
+      format(
+        A.total_distance_px,
+        2
+      ),
+
+      format(
+        B.total_distance_px,
+        2
+      ),
+
+      format(
+        A.average_pen_speed_px_sec,
+        2
+      ),
+
+      format(
+        B.average_pen_speed_px_sec,
+        2
+      )
+
+    ].map(
+      csvEscape
+    ).join(",") +
+    "\n";
+  }
+
+
+  /* -----------------------------------------
+     3回平均
+     ----------------------------------------- */
+
+  const Aresults =
+    results.filter(
+      r =>
+        r.test === "A"
+    );
+
+  const Bresults =
+    results.filter(
+      r =>
+        r.test === "B"
+    );
+
+  csv += "\n";
+  csv +=
+    "===== 3回平均 =====\n";
+
+  csv +=
+    "指標,平均値\n";
+
+  csv +=
+    "TMT-A時間(秒)," +
+    format(
+      mean(
+        Aresults.map(
+          r =>
+            r.completion_sec
+        )
+      ),
+      3
+    ) +
+    "\n";
+
+  csv +=
+    "TMT-B時間(秒)," +
+    format(
+      mean(
+        Bresults.map(
+          r =>
+            r.completion_sec
+        )
+      ),
+      3
+    ) +
+    "\n";
+
+  csv +=
+    "TMT-Aエラー数," +
+    format(
+      mean(
+        Aresults.map(
+          r => r.errors
+        )
+      ),
+      2
+    ) +
+    "\n";
+
+  csv +=
+    "TMT-Bエラー数," +
+    format(
+      mean(
+        Bresults.map(
+          r => r.errors
+        )
+      ),
+      2
+    ) +
+    "\n";
+
+  csv +=
+    "TMT-A離筆回数," +
+    format(
+      mean(
+        Aresults.map(
+          r =>
+            r.pen_lifts
+        )
+      ),
+      2
+    ) +
+    "\n";
+
+  csv +=
+    "TMT-B離筆回数," +
+    format(
+      mean(
+        Bresults.map(
+          r =>
+            r.pen_lifts
+        )
+      ),
+      2
+    ) +
+    "\n";
+
+
+  /* -----------------------------------------
+     各ターゲット到達時間
+     ----------------------------------------- */
+
+  csv += "\n";
+  csv +=
+    "===== ターゲット到達記録 =====\n";
+
+  csv +=
+    "被験者ID,課題,回,到達順,ラベル,到達時間(ms),X座標,Y座標\n";
+
+
+  results.forEach(
+    result => {
+
+      result.target_arrivals.forEach(
+        target => {
+
+          csv += [
+            participantID,
+            "TMT-" +
+              result.test,
+            result.repetition,
+            target.order,
+            target.label,
+            format(
+              target.elapsed_ms,
+              2
+            ),
+            format(
+              target.x,
+              2
+            ),
+            format(
+              target.y,
+              2
+            )
+          ].map(
+            csvEscape
+          ).join(",") +
+          "\n";
+        }
+      );
+    }
+  );
+
+
+  /* -----------------------------------------
+     エラー・離筆イベント
+     ----------------------------------------- */
+
+  csv += "\n";
+  csv +=
+    "===== イベント記録 =====\n";
+
+  csv +=
+    "被験者ID,課題,回,イベント,経過時間(ms),期待ラベル,接触ラベル,離筆累積回数\n";
+
+
+  eventLog.forEach(
+    e => {
+
+      csv += [
+        participantID,
+        "TMT-" +
+          e.test,
+        e.repetition,
+        e.event,
+        format(
+          e.elapsed_ms,
+          2
+        ),
+        e.expected_label || "",
+        e.touched_label || "",
+        e.pen_lift_count || ""
+      ].map(
+        csvEscape
+      ).join(",") +
+      "\n";
+    }
+  );
+
+
+  /* -----------------------------------------
+     UTF-8 BOM
+     ----------------------------------------- */
+
+  const bom =
+    new Uint8Array([
+      0xEF,
+      0xBB,
+      0xBF
+    ]);
+
+  const blob =
+    new Blob(
+      [bom,csv],
+      {
+        type:
+          "text/csv;charset=utf-8;"
+      }
+    );
+
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+  const a =
+    document.createElement(
+      "a"
+    );
+
+  a.href = url;
+
+  a.download =
+    participantID +
+    "_TMT結果.csv";
+
+  document.body.appendChild(
+    a
+  );
+
+  a.click();
+
+  document.body.removeChild(
+    a
+  );
+
+  URL.revokeObjectURL(
+    url
+  );
+
+
+  document.getElementById(
+    "app"
+  ).innerHTML = `
+    <div class="screen">
+
+      <h2>終了しました</h2>
+
+      <p>
+        ご協力ありがとうございました。
+      </p>
+
+    </div>
+  `;
+}
+
+
+/* =========================================================
+   開始
+   ========================================================= */
+
+checkOrientation();
+
+showParticipantScreen();
+
+</script>
+
+</body>
+</html>
