@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
+
 <meta charset="UTF-8">
 
-<meta name="viewport"
-content="
-width=device-width,
-initial-scale=1.0,
-maximum-scale=1.0,
-user-scalable=no,
-viewport-fit=cover
-">
+<meta
+  name="viewport"
+  content="
+    width=device-width,
+    initial-scale=1.0,
+    maximum-scale=1.0,
+    user-scalable=no,
+    viewport-fit=cover
+  "
+>
 
 <title>TMT-A / TMT-B</title>
+
 
 <style>
 
@@ -20,13 +25,22 @@ viewport-fit=cover
   box-sizing: border-box;
 }
 
-html, body {
+
+html,
+body {
+
   margin: 0;
+
   padding: 0;
+
   width: 100%;
+
   min-height: 100%;
+
   background: white;
+
   color: #111;
+
   font-family:
     -apple-system,
     BlinkMacSystemFont,
@@ -35,20 +49,27 @@ html, body {
     sans-serif;
 
   overscroll-behavior: none;
+
 }
+
 
 body {
   touch-action: manipulation;
 }
 
+
 #app {
+
   width: 100%;
+
   min-height: 100vh;
 
   display: flex;
+
   flex-direction: column;
 
   align-items: center;
+
   justify-content: center;
 
   padding:
@@ -56,37 +77,60 @@ body {
     12px
     max(12px, env(safe-area-inset-bottom))
     12px;
+
 }
 
+
 .screen {
-  width: min(94vw, 760px);
-  text-align: center;
+
+  width:
+    min(
+      94vw,
+      760px
+    );
+
+  text-align:
+    center;
+
 }
+
 
 h1 {
   font-size: 34px;
 }
 
+
 h2 {
   font-size: 29px;
 }
+
 
 h3 {
   font-size: 23px;
 }
 
+
 p {
+
   font-size: 21px;
+
   line-height: 1.55;
+
 }
 
+
 .small {
+
   font-size: 16px;
+
 }
+
 
 input,
 select {
+
   width: 88%;
+
   max-width: 480px;
 
   font-size: 22px;
@@ -95,38 +139,42 @@ select {
 
   margin: 8px;
 
-  border:
-    1px solid #777;
+  border: 1px solid #777;
 
-  border-radius:
-    8px;
+  border-radius: 8px;
 
   background: white;
+
 }
+
 
 button {
 
   font-size: 22px;
 
   padding:
-    13px 28px;
+    13px
+    28px;
 
-  margin:
-    16px;
+  margin: 16px;
 
-  border-radius:
-    9px;
+  border-radius: 9px;
 
   border:
     1px solid #555;
 
   background: white;
+
 }
 
+
 button:active {
+
   background:
     #eeeeee;
+
 }
+
 
 #taskHeader {
 
@@ -134,87 +182,82 @@ button:active {
 
   height: 78px;
 
-  text-align:
-    center;
+  text-align: center;
 
   flex:
     0 0 auto;
+
 }
+
 
 #taskTitle {
 
-  font-size:
-    26px;
+  font-size: 26px;
 
-  font-weight:
-    bold;
+  font-weight: bold;
+
 }
+
 
 #taskMessage {
 
-  font-size:
-    17px;
+  font-size: 17px;
 
-  min-height:
-    24px;
+  min-height: 24px;
+
 }
+
 
 #canvasWrap {
 
-  position:
-    relative;
+  position: relative;
 
-  touch-action:
-    none;
+  touch-action: none;
 
-  user-select:
-    none;
+  user-select: none;
 
-  -webkit-user-select:
-    none;
+  -webkit-user-select: none;
+
 }
+
 
 #tmtCanvas {
 
-  background:
-    white;
+  background: white;
 
   border:
     1px solid #aaa;
 
-  touch-action:
-    none;
+  touch-action: none;
 
-  display:
-    block;
+  display: block;
+
 }
+
 
 .countdown {
 
-  font-size:
-    82px;
+  font-size: 82px;
 
-  font-weight:
-    bold;
+  font-weight: bold;
 
-  margin:
-    15px 0;
+  margin: 15px 0;
+
 }
+
 
 .resultTable {
 
-  width:
-    100%;
+  width: 100%;
 
-  border-collapse:
-    collapse;
+  border-collapse: collapse;
 
-  font-size:
-    14px;
+  font-size: 13px;
 
-  margin:
-    14px 0;
+  margin: 14px 0;
+
 }
+
 
 .resultTable th,
 .resultTable td {
@@ -224,51 +267,48 @@ button:active {
 
   padding:
     6px 4px;
+
 }
+
 
 #orientationWarning {
 
-  display:
-    none;
+  display: none;
 
-  position:
-    fixed;
+  position: fixed;
 
-  inset:
-    0;
+  inset: 0;
 
-  z-index:
-    9999;
+  z-index: 9999;
 
-  background:
-    white;
+  background: white;
 
-  align-items:
-    center;
+  align-items: center;
 
-  justify-content:
-    center;
+  justify-content: center;
 
-  text-align:
-    center;
+  text-align: center;
 
-  padding:
-    30px;
+  padding: 30px;
+
 }
+
 
 .warningText {
 
-  color:
-    #b00020;
+  color: #b00020;
 
-  font-size:
-    17px;
+  font-size: 17px;
+
 }
 
 </style>
+
 </head>
 
+
 <body>
+
 
 <div id="orientationWarning">
 
@@ -286,24 +326,31 @@ button:active {
 
 </div>
 
+
 <div id="app"></div>
+
 
 
 <script>
 
+
 /* =========================================================
    1. 研究設定
-   ========================================================= */
+========================================================= */
 
 
 /*
-  TMT-A → TMT-B
+  TMT-A終了
+  ↓
+  TMT-Bまで
 */
 const REST_A_TO_B_SEC = 30;
 
 
 /*
-  TMT-B → 次のTMT-A
+  TMT-B終了
+  ↓
+  次のTMT-Aまで
 */
 const REST_B_TO_A_SEC = 60;
 
@@ -315,9 +362,10 @@ const REQUIRE_PEN = true;
 
 
 /*
-  PCでマウス動作確認するときだけ true。
+  PCでマウスによる動作確認をするときだけ
+  true に変更してください。
 
-  iPad本番前には必ず false に戻してください。
+  iPad本番時は false。
 */
 const ALLOW_MOUSE_FOR_DEBUG = false;
 
@@ -329,38 +377,33 @@ const TARGET_RADIUS = 24;
 
 
 /*
-  軌跡の太さ
+  描画線の太さ
 */
 const LINE_WIDTH = 4;
 
 
 /*
-  生成するフォーム数
-
-  6測定時点 × 3回
+  6測定時点 × 3フォーム
 */
 const N_FORMS = 18;
 
 
-/*
-  各測定時点のフォーム数
-*/
 const FORMS_PER_SESSION = 3;
 
 
 /*
-  配置を固定再現するための研究用seed。
+  フォーム固定用seed
 
-  この値を変更しない限り、
-  A01〜A18 / B01〜B18は同一になります。
+  この数字を変更しない限り
+  A01～A18 / B01～B18は固定される。
 */
-const MASTER_SEED =
-  20260807;
+const MASTER_SEED = 20260807;
 
 
 /* =========================================================
    2. 測定時点
-   ========================================================= */
+========================================================= */
+
 
 const TIMEPOINTS = [
 
@@ -399,7 +442,8 @@ const TIMEPOINTS = [
 
 /* =========================================================
    3. 基本変数
-   ========================================================= */
+========================================================= */
+
 
 let participantID = "";
 
@@ -417,27 +461,40 @@ let results = [];
 
 let eventLog = [];
 
+let sessionStartTime = "";
+
 
 /* =========================================================
-   4. TMT-A/B 正答系列
-   ========================================================= */
+   4. 正答系列
+========================================================= */
+
 
 /*
-  A:
-  1 → 2 → ... → 25
+  TMT-A
+
+  1 → 2 → 3 → ... → 25
 */
 
 const labelsA =
+
   Array.from(
-    { length: 25 },
+
+    {
+      length: 25
+    },
+
     (_, i) =>
-      String(i + 1)
+      String(
+        i + 1
+      )
+
   );
 
 
 /*
-  B:
-  1 → A → 2 → B ...
+  TMT-B
+
+  1 → A → 2 → B → ...
   → 12 → L → 13
 
   数字13個
@@ -448,17 +505,29 @@ const labelsA =
 const labelsB = [
 
   "1","A",
+
   "2","B",
+
   "3","C",
+
   "4","D",
+
   "5","E",
+
   "6","F",
+
   "7","G",
+
   "8","H",
+
   "9","I",
+
   "10","J",
+
   "11","K",
+
   "12","L",
+
   "13"
 
 ];
@@ -466,97 +535,139 @@ const labelsB = [
 
 /* =========================================================
    5. 練習
-   ========================================================= */
-
-const practiceLabelsA =
-  [
-    "1","2","3","4",
-    "5","6","7","8"
-  ];
+========================================================= */
 
 
-const practiceLayoutA =
-  [
-    [0.16,0.12],
-    [0.72,0.16],
-    [0.40,0.29],
-    [0.82,0.43],
-    [0.22,0.49],
-    [0.61,0.63],
-    [0.17,0.78],
-    [0.72,0.87]
-  ];
+const practiceLabelsA = [
+
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8"
+
+];
 
 
-const practiceLabelsB =
-  [
-    "1","A",
-    "2","B",
-    "3","C",
-    "4","D"
-  ];
+const practiceLayoutA = [
+
+  [0.16,0.12],
+
+  [0.72,0.16],
+
+  [0.40,0.29],
+
+  [0.82,0.43],
+
+  [0.22,0.49],
+
+  [0.61,0.63],
+
+  [0.17,0.78],
+
+  [0.72,0.87]
+
+];
 
 
-const practiceLayoutB =
-  [
-    [0.18,0.13],
-    [0.73,0.15],
-    [0.42,0.30],
-    [0.81,0.45],
-    [0.23,0.50],
-    [0.64,0.65],
-    [0.17,0.79],
-    [0.72,0.87]
-  ];
+const practiceLabelsB = [
+
+  "1","A",
+
+  "2","B",
+
+  "3","C",
+
+  "4","D"
+
+];
+
+
+const practiceLayoutB = [
+
+  [0.18,0.13],
+
+  [0.73,0.15],
+
+  [0.42,0.30],
+
+  [0.81,0.45],
+
+  [0.23,0.50],
+
+  [0.64,0.65],
+
+  [0.17,0.79],
+
+  [0.72,0.87]
+
+];
 
 
 /* =========================================================
-   6. 見本を参考にした25個の位置スロット
-   ========================================================= */
+   6. 25ターゲット配置用スロット
+========================================================= */
 
-/*
-  毎回座標そのものを完全ランダム化するのではなく、
-
-  ・画面全体へ広く分散
-  ・端から一定距離を取る
-  ・円同士が重ならない
-
-  25の位置スロットへ
-  ラベルをランダム割付する。
-*/
 
 const POSITION_SLOTS = [
 
   [0.10,0.08],
+
   [0.32,0.07],
+
   [0.55,0.09],
+
   [0.80,0.08],
 
+
   [0.18,0.20],
+
   [0.43,0.19],
+
   [0.68,0.21],
+
   [0.90,0.23],
 
+
   [0.08,0.34],
+
   [0.30,0.32],
+
   [0.55,0.34],
+
   [0.79,0.35],
 
+
   [0.16,0.47],
+
   [0.41,0.46],
+
   [0.66,0.48],
+
   [0.90,0.50],
 
+
   [0.08,0.61],
+
   [0.31,0.59],
+
   [0.55,0.62],
+
   [0.80,0.62],
 
+
   [0.16,0.75],
+
   [0.40,0.73],
+
   [0.67,0.77],
 
+
   [0.28,0.89],
+
   [0.76,0.88]
 
 ];
@@ -564,49 +675,81 @@ const POSITION_SLOTS = [
 
 /* =========================================================
    7. Seed付き乱数
-   ========================================================= */
+========================================================= */
+
 
 function mulberry32(seed) {
 
   return function() {
 
     let t =
+
       seed +=
       0x6D2B79F5;
 
+
     t =
+
       Math.imul(
+
         t ^
-        t >>> 15,
+        (
+          t >>> 15
+        ),
+
         t | 1
+
       );
+
 
     t ^=
+
       t +
+
       Math.imul(
+
         t ^
-        t >>> 7,
+        (
+          t >>> 7
+        ),
+
         t | 61
+
       );
 
+
     return (
+
       (
         t ^
-        t >>> 14
-      ) >>> 0
-    ) / 4294967296;
+        (
+          t >>> 14
+        )
+      )
+
+      >>> 0
+
+    )
+
+    /
+
+    4294967296;
+
   };
+
 }
 
 
 /* =========================================================
-   8. 文字列ハッシュ
-   ========================================================= */
+   8. 文字列hash
+========================================================= */
+
 
 function hashString(text) {
 
   let hash =
     2166136261;
+
 
   for (
     let i = 0;
@@ -615,22 +758,32 @@ function hashString(text) {
   ) {
 
     hash ^=
+
       text.charCodeAt(i);
 
+
     hash =
+
       Math.imul(
+
         hash,
+
         16777619
+
       );
+
   }
 
+
   return hash >>> 0;
+
 }
 
 
 /* =========================================================
    9. Seed付きshuffle
-   ========================================================= */
+========================================================= */
+
 
 function seededShuffle(
   array,
@@ -640,107 +793,171 @@ function seededShuffle(
   const result =
     [...array];
 
+
   for (
+
     let i =
       result.length - 1;
 
     i > 0;
 
     i--
+
   ) {
 
     const j =
+
       Math.floor(
-        rng() *
-        (i + 1)
+
+        rng()
+        *
+        (
+          i + 1
+        )
+
       );
+
 
     [
       result[i],
       result[j]
-    ] =
+    ]
+
+    =
+
     [
       result[j],
       result[i]
     ];
+
   }
 
+
   return result;
+
 }
 
 
 /* =========================================================
-   10. 経路指標
-   ========================================================= */
+   10. 配置指標
+========================================================= */
+
 
 function calculateLayoutMetrics(
   layout
 ) {
 
-  let totalLength = 0;
+  let totalLength =
+    0;
 
-  let maxStep = 0;
 
-  let totalAbsX = 0;
+  let maxStep =
+    0;
 
-  let totalAbsY = 0;
 
-  const distances = [];
+  let totalAbsX =
+    0;
+
+
+  let totalAbsY =
+    0;
+
+
+  const distances =
+    [];
 
 
   for (
+
     let i = 1;
+
     i < layout.length;
+
     i++
+
   ) {
 
     const dx =
-      layout[i][0] -
+
+      layout[i][0]
+      -
       layout[i - 1][0];
 
+
     const dy =
-      layout[i][1] -
+
+      layout[i][1]
+      -
       layout[i - 1][1];
 
-    const d =
+
+    const distance =
+
       Math.sqrt(
-        dx * dx +
+
+        dx * dx
+        +
         dy * dy
+
       );
 
-    distances.push(d);
 
-    totalLength += d;
+    distances.push(
+      distance
+    );
+
+
+    totalLength +=
+      distance;
+
 
     maxStep =
+
       Math.max(
+
         maxStep,
-        d
+
+        distance
+
       );
+
 
     totalAbsX +=
       Math.abs(dx);
 
+
     totalAbsY +=
       Math.abs(dy);
+
   }
 
 
   const meanStep =
-    totalLength /
+
+    totalLength
+    /
     distances.length;
 
 
   const variance =
+
     distances.reduce(
+
       (sum,d) =>
+
         sum +
+
         Math.pow(
           d - meanStep,
           2
         ),
+
       0
-    ) /
+
+    )
+
+    /
+
     distances.length;
 
 
@@ -772,47 +989,71 @@ function calculateLayoutMetrics(
       )
 
   };
+
 }
 
 
 /* =========================================================
-   11. 線分交差
-   ========================================================= */
+   11. 線分交差数
+========================================================= */
+
 
 function orientation(
-  a,b,c
+  a,
+  b,
+  c
 ) {
 
   const value =
+
     (
       b[1] - a[1]
-    ) *
+    )
+
+    *
+
     (
       c[0] - b[0]
     )
+
     -
+
     (
       b[0] - a[0]
-    ) *
+    )
+
+    *
+
     (
       c[1] - b[1]
     );
+
 
   if (
     Math.abs(value) <
     1e-10
   ) {
+
     return 0;
+
   }
 
+
   return value > 0
-    ? 1
-    : 2;
+    ?
+    1
+    :
+    2;
+
 }
 
 
+
 function segmentsIntersect(
-  p1,q1,p2,q2
+  p1,
+  q1,
+  p2,
+  q2
 ) {
 
   const o1 =
@@ -820,42 +1061,59 @@ function segmentsIntersect(
       p1,q1,p2
     );
 
+
   const o2 =
     orientation(
       p1,q1,q2
     );
+
 
   const o3 =
     orientation(
       p2,q2,p1
     );
 
+
   const o4 =
     orientation(
       p2,q2,q1
     );
 
+
   return (
-    o1 !== o2 &&
+
+    o1 !== o2
+    &&
     o3 !== o4
+
   );
+
 }
+
 
 
 function countCrossings(
   layout
 ) {
 
-  let count = 0;
+  let count =
+    0;
+
 
   for (
+
     let i = 0;
+
     i <
-    layout.length - 1;
+      layout.length - 1;
+
     i++
+
   ) {
 
+
     for (
+
       let j =
         i + 2;
 
@@ -863,39 +1121,56 @@ function countCrossings(
         layout.length - 1;
 
       j++
+
     ) {
 
-      /*
-        隣接線分は除外
-      */
 
       if (
-        Math.abs(i-j) <= 1
+        Math.abs(
+          i - j
+        )
+        <= 1
       ) {
+
         continue;
+
       }
 
+
       if (
+
         segmentsIntersect(
+
           layout[i],
+
           layout[i+1],
+
           layout[j],
+
           layout[j+1]
+
         )
+
       ) {
 
         count++;
+
       }
+
     }
+
   }
 
+
   return count;
+
 }
 
 
 /* =========================================================
-   12. 極端に簡単な配置を除外
-   ========================================================= */
+   12. 配置条件
+========================================================= */
+
 
 function validLayout(
   layout
@@ -904,66 +1179,102 @@ function validLayout(
   const minimumStep =
     0.14;
 
+
   const maximumStep =
     0.95;
 
 
   for (
+
     let i = 1;
+
     i < layout.length;
+
     i++
+
   ) {
 
     const dx =
-      layout[i][0] -
+
+      layout[i][0]
+      -
       layout[i-1][0];
 
+
     const dy =
-      layout[i][1] -
+
+      layout[i][1]
+      -
       layout[i-1][1];
 
-    const d =
+
+    const distance =
+
       Math.sqrt(
-        dx*dx +
-        dy*dy
+
+        dx * dx
+        +
+        dy * dy
+
       );
 
 
     if (
-      d < minimumStep ||
-      d > maximumStep
+
+      distance <
+        minimumStep
+
+      ||
+
+      distance >
+        maximumStep
+
     ) {
 
       return false;
+
     }
+
   }
 
+
   return true;
+
 }
 
 
 /* =========================================================
    13. 配置signature
-   ========================================================= */
+========================================================= */
+
 
 function layoutSignature(
   layout
 ) {
 
   return layout
+
     .map(
+
       p =>
-        p[0].toFixed(3) +
-        ":" +
+
+        p[0].toFixed(3)
+        +
+        ":"
+        +
         p[1].toFixed(3)
+
     )
+
     .join("|");
+
 }
 
 
 /* =========================================================
-   14. 18フォーム候補生成
-   ========================================================= */
+   14. 難易度を揃えた18フォーム生成
+========================================================= */
+
 
 function createMatchedForms(
   seed
@@ -975,26 +1286,32 @@ function createMatchedForms(
     );
 
 
-  const candidatePool = [];
+  const candidatePool =
+    [];
+
 
   const signatures =
     new Set();
 
 
-  /*
-    多数の候補を作る
-  */
-
   for (
+
     let attempt = 0;
-    attempt < 3000;
+
+    attempt < 4000;
+
     attempt++
+
   ) {
 
     const candidate =
+
       seededShuffle(
+
         POSITION_SLOTS,
+
         rng
+
       );
 
 
@@ -1003,11 +1320,14 @@ function createMatchedForms(
         candidate
       )
     ) {
+
       continue;
+
     }
 
 
     const signature =
+
       layoutSignature(
         candidate
       );
@@ -1018,7 +1338,9 @@ function createMatchedForms(
         signature
       )
     ) {
+
       continue;
+
     }
 
 
@@ -1038,6 +1360,7 @@ function createMatchedForms(
         )
 
     });
+
   }
 
 
@@ -1047,110 +1370,171 @@ function createMatchedForms(
   ) {
 
     throw new Error(
-      "十分なTMT配置を生成できませんでした。"
+      "十分なTMTフォームを生成できませんでした。"
     );
+
   }
 
-
-  /*
-    中央値
-  */
 
   function median(values) {
 
     const sorted =
+
       [...values]
       .sort(
-        (a,b) =>
-          a-b
+        (a,b) => a-b
       );
+
 
     const n =
       sorted.length;
+
 
     if (
       n % 2 === 0
     ) {
 
       return (
-        sorted[n/2-1] +
-        sorted[n/2]
+
+        sorted[
+          n/2 - 1
+        ]
+
+        +
+
+        sorted[
+          n/2
+        ]
+
       ) / 2;
 
     }
+
 
     return sorted[
       Math.floor(
         n/2
       )
     ];
+
   }
 
 
   const targetMetrics = {
 
     totalLength:
+
       median(
+
         candidatePool.map(
-          c =>
-            c.metrics.totalLength
+
+          candidate =>
+            candidate
+            .metrics
+            .totalLength
+
         )
+
       ),
+
 
     meanStep:
+
       median(
+
         candidatePool.map(
-          c =>
-            c.metrics.meanStep
+
+          candidate =>
+            candidate
+            .metrics
+            .meanStep
+
         )
+
       ),
+
 
     sdStep:
+
       median(
+
         candidatePool.map(
-          c =>
-            c.metrics.sdStep
+
+          candidate =>
+            candidate
+            .metrics
+            .sdStep
+
         )
+
       ),
+
 
     maxStep:
+
       median(
+
         candidatePool.map(
-          c =>
-            c.metrics.maxStep
+
+          candidate =>
+            candidate
+            .metrics
+            .maxStep
+
         )
+
       ),
+
 
     totalAbsX:
+
       median(
+
         candidatePool.map(
-          c =>
-            c.metrics.totalAbsX
+
+          candidate =>
+            candidate
+            .metrics
+            .totalAbsX
+
         )
+
       ),
+
 
     totalAbsY:
+
       median(
+
         candidatePool.map(
-          c =>
-            c.metrics.totalAbsY
+
+          candidate =>
+            candidate
+            .metrics
+            .totalAbsY
+
         )
+
       ),
 
+
     crossings:
+
       median(
+
         candidatePool.map(
-          c =>
-            c.metrics.crossings
+
+          candidate =>
+            candidate
+            .metrics
+            .crossings
+
         )
+
       )
 
   };
 
-
-  /*
-    中央的な難易度への距離
-  */
 
   function relativeDifference(
     value,
@@ -1160,23 +1544,37 @@ function createMatchedForms(
     if (
       target === 0
     ) {
+
       return 0;
+
     }
 
+
     return (
+
       Math.abs(
-        value-target
-      ) /
-      Math.abs(target)
+        value - target
+      )
+
+      /
+
+      Math.abs(
+        target
+      )
+
     );
+
   }
 
 
   candidatePool.forEach(
+
     candidate => {
+
 
       const m =
         candidate.metrics;
+
 
       candidate.score =
 
@@ -1228,27 +1626,31 @@ function createMatchedForms(
         );
 
     }
+
   );
 
 
   candidatePool.sort(
+
     (a,b) =>
-      a.score -
-      b.score
+      a.score - b.score
+
   );
 
 
-  /*
-    上位18フォーム採用
-  */
-
   return candidatePool
+
     .slice(
       0,
       N_FORMS
     )
+
     .map(
-      (candidate,index) => ({
+
+      (
+        candidate,
+        index
+      ) => ({
 
         formNumber:
           index + 1,
@@ -1260,114 +1662,131 @@ function createMatchedForms(
           candidate.metrics
 
       })
+
     );
+
 }
 
 
 /* =========================================================
-   15. A01～A18 / B01～B18生成
-   ========================================================= */
+   15. A/Bの18フォーム
+========================================================= */
+
 
 const formsA =
+
   createMatchedForms(
-    MASTER_SEED +
+
+    MASTER_SEED
+    +
     1001
+
   );
 
 
 const formsB =
+
   createMatchedForms(
-    MASTER_SEED +
+
+    MASTER_SEED
+    +
     5001
+
   );
 
 
 /* =========================================================
-   16. 被験者ごとの6セット提示順
-   ========================================================= */
+   16. 被験者ごとのセット順
+========================================================= */
 
-/*
-  フォームを3個ずつ6セットにする。
-
-  Set 1 = Forms 1-3
-  Set 2 = Forms 4-6
-  ...
-  Set 6 = Forms 16-18
-
-  被験者IDによって開始Setをずらす。
-
-  例
-
-  被験者A:
-  1,2,3,4,5,6
-
-  被験者B:
-  2,3,4,5,6,1
-
-  ...
-*/
 
 function createParticipantSetOrder(
   participant
 ) {
 
   const offset =
+
     hashString(
       participant
-    ) % 6;
+    )
+    %
+    6;
 
 
-  const order = [];
+  const order =
+    [];
+
 
   for (
-    let i=0;
-    i<6;
+    let i = 0;
+    i < 6;
     i++
   ) {
 
     order.push(
+
       (
-        offset +
-        i
-      ) % 6
+        (
+          offset + i
+        )
+        %
+        6
+      )
+
       + 1
+
     );
+
   }
 
+
   return order;
+
 }
 
 
 /* =========================================================
-   17. 該当測定時点の3フォーム
-   ========================================================= */
+   17. 1測定時点で使用する3フォーム
+========================================================= */
+
 
 function getFormsForSession(
   setNumber
 ) {
 
   const startIndex =
+
     (
       setNumber - 1
-    ) *
+    )
+
+    *
+
     FORMS_PER_SESSION;
 
 
   return [
+
     startIndex,
+
     startIndex + 1,
+
     startIndex + 2
+
   ];
+
 }
 
 
 /* =========================================================
-   18. iPad縦向き判定
-   ========================================================= */
+   18. 縦向きチェック
+========================================================= */
+
 
 function checkOrientation() {
 
   const warning =
+
     document.getElementById(
       "orientationWarning"
     );
@@ -1381,25 +1800,34 @@ function checkOrientation() {
     warning.style.display =
       "flex";
 
-  } else {
+  }
+
+  else {
 
     warning.style.display =
       "none";
+
   }
+
 }
 
 
 window.addEventListener(
+
   "resize",
+
   checkOrientation
+
 );
 
 
 /* =========================================================
-   19. 被験者・測定時点入力画面
-   ========================================================= */
+   19. ID・測定時点入力
+========================================================= */
+
 
 function showParticipantScreen() {
+
 
   document.getElementById(
     "app"
@@ -1411,48 +1839,81 @@ function showParticipantScreen() {
         TMT-A / TMT-B
       </h1>
 
+
       <p>
         被験者IDを入力してください。
       </p>
 
+
       <input
+
         id="participantInput"
+
         type="text"
-        placeholder="例：P001"
+
+        placeholder="例：01 または 001"
+
+        inputmode="numeric"
+
+        maxlength="3"
+
         autocomplete="off"
+
       >
+
+
+      <p class="small">
+
+        半角数字2桁または3桁で
+        入力してください。
+
+      </p>
+
 
       <p>
         測定時点を選択してください。
       </p>
 
-      <select
-        id="timepointSelect"
-      >
+
+      <select id="timepointSelect">
 
         ${
+
           TIMEPOINTS
+
           .map(
-            (t,index) =>
-              `
+
+            (
+              timepoint,
+              index
+            ) => `
+
               <option
                 value="${index}"
               >
-                ${t.name}
+
+                ${timepoint.name}
+
               </option>
-              `
+
+            `
+
           )
+
           .join("")
+
         }
 
       </select>
 
+
       <br>
 
-      <button
-        id="participantButton"
-      >
+
+      <button id="participantButton">
+
         次へ
+
       </button>
 
     </div>
@@ -1465,10 +1926,14 @@ function showParticipantScreen() {
       "participantButton"
     )
     .addEventListener(
+
       "click",
+
       function() {
 
+
         const value =
+
           document
             .getElementById(
               "participantInput"
@@ -1477,13 +1942,38 @@ function showParticipantScreen() {
             .trim();
 
 
-        if (!value) {
+        if (
+          !value
+        ) {
 
           alert(
             "被験者IDを入力してください。"
           );
 
           return;
+
+        }
+
+
+        /*
+          2桁または3桁の
+          半角数字のみ
+        */
+
+        if (
+          !/^\d{2,3}$/.test(
+            value
+          )
+        ) {
+
+          alert(
+
+            "被験者IDは半角数字2桁または3桁で入力してください。\n例：01、12、001、123"
+
+          );
+
+          return;
+
         }
 
 
@@ -1492,57 +1982,69 @@ function showParticipantScreen() {
 
 
         selectedTimepointIndex =
+
           Number(
+
             document
-            .getElementById(
-              "timepointSelect"
-            )
-            .value
+              .getElementById(
+                "timepointSelect"
+              )
+              .value
+
           );
 
 
         selectedTimepoint =
+
           TIMEPOINTS[
             selectedTimepointIndex
           ];
 
 
         participantSetOrder =
+
           createParticipantSetOrder(
             participantID
           );
 
 
         selectedSetNumber =
+
           participantSetOrder[
             selectedTimepointIndex
           ];
 
 
         currentSessionForms =
+
           getFormsForSession(
             selectedSetNumber
           );
 
 
+        sessionStartTime =
+
+          new Date()
+            .toLocaleString(
+              "ja-JP"
+            );
+
+
         showInstruction();
+
       }
+
     );
+
 }
 
 
 /* =========================================================
    20. 説明
-   ========================================================= */
+========================================================= */
+
 
 function showInstruction() {
-
-  const actualForms =
-    currentSessionForms
-      .map(
-        x =>
-          x + 1
-      );
 
 
   document.getElementById(
@@ -1555,6 +2057,7 @@ function showInstruction() {
         TMT-A / TMT-B
       </h1>
 
+
       <p>
         測定時点：
         <strong>
@@ -1562,45 +2065,72 @@ function showInstruction() {
         </strong>
       </p>
 
-      <p>
-        この課題では
-        Apple Pencilを使用します。
-      </p>
 
       <p>
-        <strong>TMT-A</strong><br>
+        この課題は
+        Apple Pencilを使用して行います。
+      </p>
+
+
+      <p>
+
+        <strong>
+          TMT-A
+        </strong>
+
+        <br>
+
         1 → 2 → 3 → … → 25
+
       </p>
 
+
       <p>
-        <strong>TMT-B</strong><br>
+
+        <strong>
+          TMT-B
+        </strong>
+
+        <br>
 
         1 → A → 2 → B →
         3 → C → … →
         12 → L → 13
+
       </p>
 
+
       <p>
-        Apple Pencilを
-        できるだけ画面から離さず、
-        正しい順序で
-        線をつないでください。
+        正しい順番で
+        円をつないでください。
       </p>
+
+
+      <p>
+        できるだけ
+        Apple Pencilを画面から離さずに
+        行ってください。
+      </p>
+
+
+      <p>
+        <strong>
+          Apple Pencilが最初の「1」に
+          触れた瞬間から時間測定を開始します。
+        </strong>
+      </p>
+
 
       <p>
         TMT-A → TMT-Bを
         3回繰り返します。
       </p>
 
-      <p class="small">
-        使用フォーム：
-        ${actualForms.join(", ")}
-      </p>
 
-      <button
-        id="practiceButton"
-      >
+      <button id="practiceButton">
+
         練習を開始
+
       </button>
 
     </div>
@@ -1613,17 +2143,23 @@ function showInstruction() {
       "practiceButton"
     )
     .addEventListener(
+
       "click",
+
       startPracticeA
+
     );
+
 }
 
 
 /* =========================================================
    21. 練習A
-   ========================================================= */
+========================================================= */
+
 
 function startPracticeA() {
+
 
   startTask({
 
@@ -1645,55 +2181,65 @@ function startPracticeA() {
     layout:
       practiceLayoutA,
 
+
     onComplete:
-      function() {
-
-        document
-          .getElementById(
-            "app"
-          )
-          .innerHTML = `
-
-          <div class="screen">
-
-            <h2>
-              TMT-A 練習終了
-            </h2>
-
-            <p>
-              続いてTMT-Bの
-              練習を行います。
-            </p>
-
-            <button
-              id="practiceBButton"
-            >
-              TMT-B練習へ
-            </button>
-
-          </div>
-
-          `;
+    function() {
 
 
-        document
-          .getElementById(
-            "practiceBButton"
-          )
-          .addEventListener(
-            "click",
-            startPracticeB
-          );
-      }
+      document.getElementById(
+        "app"
+      ).innerHTML = `
+
+        <div class="screen">
+
+          <h2>
+            TMT-A 練習終了
+          </h2>
+
+
+          <p>
+            続いて
+            TMT-Bの練習を行います。
+          </p>
+
+
+          <button id="practiceBButton">
+
+            TMT-B練習へ
+
+          </button>
+
+        </div>
+
+      `;
+
+
+      document
+        .getElementById(
+          "practiceBButton"
+        )
+        .addEventListener(
+
+          "click",
+
+          startPracticeB
+
+        );
+
+    }
+
   });
+
 }
 
 
 /* =========================================================
    22. 練習B
-   ========================================================= */
+========================================================= */
+
 
 function startPracticeB() {
+
 
   startTask({
 
@@ -1715,98 +2261,122 @@ function startPracticeB() {
     layout:
       practiceLayoutB,
 
+
     onComplete:
-      function() {
-
-        document
-          .getElementById(
-            "app"
-          )
-          .innerHTML = `
-
-          <div class="screen">
-
-            <h2>
-              練習終了
-            </h2>
-
-            <p>
-              ここから本試行です。
-            </p>
-
-            <p>
-              TMT-A → TMT-Bを
-              3回実施します。
-            </p>
-
-            <button
-              id="mainStartButton"
-            >
-              本試行開始
-            </button>
-
-          </div>
-
-          `;
+    function() {
 
 
-        document
-          .getElementById(
-            "mainStartButton"
-          )
-          .addEventListener(
-            "click",
-            function() {
+      document.getElementById(
+        "app"
+      ).innerHTML = `
 
-              startMainTask(
-                "A",
-                1
-              );
-            }
-          );
-      }
+        <div class="screen">
+
+          <h2>
+            練習終了
+          </h2>
+
+
+          <p>
+            ここから本試行を開始します。
+          </p>
+
+
+          <p>
+            TMT-A → TMT-Bを
+            3回行います。
+          </p>
+
+
+          <p>
+            「1」にApple Pencilが
+            触れた瞬間から測定します。
+          </p>
+
+
+          <button id="mainStartButton">
+
+            本試行へ
+
+          </button>
+
+        </div>
+
+      `;
+
+
+      document
+        .getElementById(
+          "mainStartButton"
+        )
+        .addEventListener(
+
+          "click",
+
+          function() {
+
+            startMainTask(
+              "A",
+              1
+            );
+
+          }
+
+        );
+
+    }
+
   });
+
 }
 
 
 /* =========================================================
    23. 本試行
-   ========================================================= */
+========================================================= */
+
 
 function startMainTask(
   type,
   repetition
 ) {
 
-  /*
-    この測定時点で使用する
-    3フォームのうち何番目か
-  */
 
   const formArrayIndex =
+
     currentSessionForms[
       repetition - 1
     ];
 
 
   const form =
+
     type === "A"
-      ?
-      formsA[
-        formArrayIndex
-      ]
-      :
-      formsB[
-        formArrayIndex
-      ];
+
+    ?
+
+    formsA[
+      formArrayIndex
+    ]
+
+    :
+
+    formsB[
+      formArrayIndex
+    ];
 
 
   const labels =
+
     type === "A"
-      ?
-      labelsA
-      :
-      labelsB;
+
+    ?
+
+    labelsA
+
+    :
+
+    labelsB;
 
 
   startTask({
@@ -1834,90 +2404,116 @@ function startMainTask(
 
 
     onComplete:
-      function(result) {
+    function(result) {
 
-        results.push(
-          result
+
+      results.push(
+        result
+      );
+
+
+      /*
+        A
+        ↓
+        30秒
+        ↓
+        B
+      */
+
+      if (
+        type === "A"
+      ) {
+
+
+        showBreak(
+
+          REST_A_TO_B_SEC,
+
+          `TMT-A ${repetition}回目終了`,
+
+          `次はTMT-B ${repetition}回目です。`,
+
+          function() {
+
+            startMainTask(
+              "B",
+              repetition
+            );
+
+          }
+
         );
 
 
-        /*
-          A終了 → B
-        */
+        return;
 
-        if (
-          type === "A"
-        ) {
-
-          showBreak(
-
-            REST_A_TO_B_SEC,
-
-            `TMT-A ${repetition}回目終了`,
-
-            `次はTMT-B ${repetition}回目です。`,
-
-            function() {
-
-              startMainTask(
-                "B",
-                repetition
-              );
-            }
-
-          );
-
-          return;
-        }
-
-
-        /*
-          B1/B2終了
-          → 60秒休憩
-          → 次のA
-        */
-
-        if (
-          type === "B" &&
-          repetition < 3
-        ) {
-
-          showBreak(
-
-            REST_B_TO_A_SEC,
-
-            `TMT-B ${repetition}回目終了`,
-
-            `次はTMT-A ${repetition + 1}回目です。`,
-
-            function() {
-
-              startMainTask(
-                "A",
-                repetition + 1
-              );
-            }
-
-          );
-
-          return;
-        }
-
-
-        /*
-          B3終了
-        */
-
-        showResults();
       }
 
+
+      /*
+        B1/B2
+        ↓
+        60秒
+        ↓
+        次のA
+      */
+
+      if (
+
+        type === "B"
+
+        &&
+
+        repetition < 3
+
+      ) {
+
+
+        showBreak(
+
+          REST_B_TO_A_SEC,
+
+          `TMT-B ${repetition}回目終了`,
+
+          `次はTMT-A ${repetition + 1}回目です。`,
+
+          function() {
+
+            startMainTask(
+
+              "A",
+
+              repetition + 1
+
+            );
+
+          }
+
+        );
+
+
+        return;
+
+      }
+
+
+      /*
+        B3終了
+      */
+
+      showResults();
+
+    }
+
   });
+
 }
 
 
 /* =========================================================
    24. 休憩
-   ========================================================= */
+========================================================= */
+
 
 function showBreak(
   seconds,
@@ -1926,38 +2522,49 @@ function showBreak(
   callback
 ) {
 
+
   document.getElementById(
     "app"
   ).innerHTML = `
 
     <div class="screen">
 
+
       <h2>
         ${title}
       </h2>
+
 
       <p>
         ${nextText}
       </p>
 
+
       <p>
         休憩してください。
       </p>
+
 
       <div
         id="breakCountdown"
         class="countdown"
       >
+
         ${seconds}
+
       </div>
+
 
       <p>
         秒
       </p>
 
+
       <p class="small">
+
         0秒になると
-        自動的に次の課題を開始します。
+        自動的に次の課題へ進みます。
+
       </p>
 
     </div>
@@ -1970,22 +2577,34 @@ function showBreak(
 
 
   const interval =
+
     setInterval(
+
       function() {
 
-        remaining -= 1;
+
+        remaining--;
 
 
         const element =
-          document.getElementById(
-            "breakCountdown"
-          );
+
+          document
+            .getElementById(
+              "breakCountdown"
+            );
 
 
-        if (element) {
+        if (
+          element
+        ) {
 
           element.textContent =
-            remaining;
+
+            Math.max(
+              remaining,
+              0
+            );
+
         }
 
 
@@ -1993,34 +2612,49 @@ function showBreak(
           remaining <= 0
         ) {
 
+
           clearInterval(
             interval
           );
 
+
           callback();
+
         }
 
       },
+
       1000
+
     );
+
 }
 
 
 /* =========================================================
-   25. 課題本体
-   ========================================================= */
+   25. TMT本体
+========================================================= */
+
 
 function startTask(config) {
+
 
   const {
 
     type,
+
     repetition,
+
     formNumber,
+
     practice,
+
     labels,
+
     layout,
+
     layoutMetrics,
+
     onComplete
 
   } = config;
@@ -2032,27 +2666,49 @@ function startTask(config) {
 
     <div id="taskHeader">
 
+
       <div id="taskTitle">
 
         ${
+
           practice
+
           ?
+
           `TMT-${type} 練習`
+
           :
+
           `TMT-${type} ${repetition}回目`
+
         }
 
       </div>
 
+
       <div id="taskMessage">
 
         ${
+
           type === "A"
+
           ?
-          "Apple Pencilで1から順番につないでください"
+
+          "Apple Pencilで「1」から順番につないでください"
+
           :
-          "Apple Pencilで数字と英字を交互につないでください"
+
+          "Apple Pencilで「1」から数字と英字を交互につないでください"
+
         }
+
+      </div>
+
+
+      <div class="small">
+
+        「1」に触れた瞬間から
+        時間測定を開始します
 
       </div>
 
@@ -2061,9 +2717,7 @@ function startTask(config) {
 
     <div id="canvasWrap">
 
-      <canvas
-        id="tmtCanvas"
-      ></canvas>
+      <canvas id="tmtCanvas"></canvas>
 
     </div>
 
@@ -2071,57 +2725,76 @@ function startTask(config) {
 
 
   const canvas =
+
     document.getElementById(
       "tmtCanvas"
     );
 
 
   const ctx =
+
     canvas.getContext(
       "2d"
     );
 
 
   /* ---------------------------------------------------------
-     iPad縦向きサイズ
-     --------------------------------------------------------- */
+     iPad縦向き用canvas
+  --------------------------------------------------------- */
+
 
   const cssWidth =
+
     Math.min(
+
       window.innerWidth - 20,
+
       760
+
     );
 
 
   const cssHeight =
+
     Math.min(
-      window.innerHeight - 100,
+
+      window.innerHeight - 115,
+
       1040
+
     );
 
 
   const dpr =
-    window.devicePixelRatio ||
+
+    window.devicePixelRatio
+    ||
     1;
 
 
   canvas.style.width =
+
     cssWidth +
     "px";
 
 
   canvas.style.height =
+
     cssHeight +
     "px";
 
 
   canvas.width =
-    cssWidth *
+
+    cssWidth
+    *
     dpr;
 
 
   canvas.height =
-    cssHeight *
+
+    cssHeight
+    *
     dpr;
 
 
@@ -2132,39 +2805,64 @@ function startTask(config) {
 
 
   /* ---------------------------------------------------------
-     実座標
-     --------------------------------------------------------- */
+     実際のターゲット位置
+  --------------------------------------------------------- */
+
 
   const marginX =
     48;
+
 
   const marginY =
     48;
 
 
   const points =
+
     layout.map(
 
-      ([x,y],index) => ({
+      (
+        [x,y],
+        index
+      ) => ({
 
         x:
-          marginX +
-          x *
+
+          marginX
+
+          +
+
+          x
+
+          *
+
           (
-            cssWidth -
+            cssWidth
+            -
             marginX * 2
           ),
 
+
         y:
-          marginY +
-          y *
+
+          marginY
+
+          +
+
+          y
+
+          *
+
           (
-            cssHeight -
+            cssHeight
+            -
             marginY * 2
           ),
 
+
         label:
           labels[index],
+
 
         index:
           index
@@ -2174,438 +2872,586 @@ function startTask(config) {
     );
 
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      状態
-     --------------------------------------------------------- */
+  ========================================================= */
+
 
   let expectedIndex =
     0;
 
+
   let completed =
     false;
+
 
   let drawing =
     false;
 
+
   let started =
     false;
+
 
   let taskStart =
     0;
 
+
   let completionTime =
     0;
+
 
   let errorCount =
     0;
 
+
   let penLiftCount =
     0;
+
 
   let totalDistance =
     0;
 
+
   let penDownDuration =
     0;
+
 
   let penDownStart =
     null;
 
+
   let lastPoint =
     null;
+
 
   let activeWrongTarget =
     null;
 
+
   let segments =
     [];
 
+
   let currentSegment =
     [];
+
 
   let targetArrivals =
     [];
 
 
-  /* =========================================================
-     描画
-     ========================================================= */
-
-  function drawScene() {
-
-    ctx.clearRect(
-      0,
-      0,
-      cssWidth,
-      cssHeight
-    );
+/* =========================================================
+   描画
+========================================================= */
 
 
-    ctx.lineCap =
-      "round";
-
-    ctx.lineJoin =
-      "round";
-
-    ctx.lineWidth =
-      LINE_WIDTH;
-
-    ctx.strokeStyle =
-      "#111";
+function drawScene() {
 
 
-    /*
-      過去線
-    */
+  ctx.clearRect(
 
-    segments.forEach(
-      segment => {
+    0,
+    0,
 
-        if (
-          segment.length < 2
-        ) {
-          return;
-        }
+    cssWidth,
+    cssHeight
+
+  );
 
 
-        ctx.beginPath();
-
-        ctx.moveTo(
-          segment[0].x,
-          segment[0].y
-        );
+  ctx.lineCap =
+    "round";
 
 
-        for (
-          let i = 1;
-          i < segment.length;
-          i++
-        ) {
-
-          ctx.lineTo(
-            segment[i].x,
-            segment[i].y
-          );
-        }
+  ctx.lineJoin =
+    "round";
 
 
-        ctx.stroke();
+  ctx.lineWidth =
+    LINE_WIDTH;
+
+
+  ctx.strokeStyle =
+    "#111";
+
+
+  /* 過去の線 */
+
+  segments.forEach(
+
+    segment => {
+
+
+      if (
+        segment.length < 2
+      ) {
+
+        return;
+
       }
-    );
 
-
-    /*
-      現在線
-    */
-
-    if (
-      currentSegment.length >
-      1
-    ) {
 
       ctx.beginPath();
 
+
       ctx.moveTo(
-        currentSegment[0].x,
-        currentSegment[0].y
+
+        segment[0].x,
+
+        segment[0].y
+
       );
 
 
       for (
+
         let i = 1;
-        i < currentSegment.length;
+
+        i < segment.length;
+
         i++
+
       ) {
 
+
         ctx.lineTo(
-          currentSegment[i].x,
-          currentSegment[i].y
+
+          segment[i].x,
+
+          segment[i].y
+
         );
+
       }
 
 
       ctx.stroke();
+
+    }
+
+  );
+
+
+  /* 現在描画中の線 */
+
+
+  if (
+    currentSegment.length > 1
+  ) {
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+
+      currentSegment[0].x,
+
+      currentSegment[0].y
+
+    );
+
+
+    for (
+
+      let i = 1;
+
+      i < currentSegment.length;
+
+      i++
+
+    ) {
+
+
+      ctx.lineTo(
+
+        currentSegment[i].x,
+
+        currentSegment[i].y
+
+      );
+
     }
 
 
-    /*
-      円
-    */
+    ctx.stroke();
 
-    points.forEach(
-      (point,index) => {
-
-        ctx.beginPath();
-
-        ctx.arc(
-          point.x,
-          point.y,
-          TARGET_RADIUS,
-          0,
-          Math.PI * 2
-        );
-
-
-        if (
-          index <
-          expectedIndex
-        ) {
-
-          ctx.fillStyle =
-            "#eeeeee";
-
-        } else {
-
-          ctx.fillStyle =
-            "white";
-        }
-
-
-        ctx.fill();
-
-
-        ctx.strokeStyle =
-          "#111";
-
-        ctx.lineWidth =
-          2;
-
-        ctx.stroke();
-
-
-        ctx.fillStyle =
-          "#111";
-
-
-        let fontSize =
-          19;
-
-
-        if (
-          point.label.length >= 2
-        ) {
-
-          fontSize =
-            16;
-        }
-
-
-        ctx.font =
-          `bold ${fontSize}px Arial`;
-
-
-        ctx.textAlign =
-          "center";
-
-
-        ctx.textBaseline =
-          "middle";
-
-
-        ctx.fillText(
-          point.label,
-          point.x,
-          point.y
-        );
-      }
-    );
   }
 
 
-  drawScene();
+  /* 円 */
 
 
-  /* =========================================================
-     Pointer座標
-     ========================================================= */
+  points.forEach(
 
-  function getPointerPosition(e) {
-
-    const rect =
-      canvas
-      .getBoundingClientRect();
+    (
+      point,
+      index
+    ) => {
 
 
-    return {
-
-      x:
-        e.clientX -
-        rect.left,
-
-      y:
-        e.clientY -
-        rect.top
-
-    };
-  }
+      ctx.beginPath();
 
 
-  /* =========================================================
-     ターゲット検索
-     ========================================================= */
+      ctx.arc(
 
-  function findTargetAt(
-    x,
-    y
-  ) {
+        point.x,
 
-    for (
-      let i=0;
-      i<points.length;
-      i++
-    ) {
+        point.y,
 
-      const dx =
-        x -
-        points[i].x;
+        TARGET_RADIUS,
 
+        0,
 
-      const dy =
-        y -
-        points[i].y;
+        Math.PI * 2
 
-
-      const distance =
-        Math.sqrt(
-          dx*dx +
-          dy*dy
-        );
+      );
 
 
       if (
-        distance <=
-        TARGET_RADIUS
+        index < expectedIndex
       ) {
 
-        return i;
+
+        ctx.fillStyle =
+          "#eeeeee";
+
       }
-    }
+
+      else {
 
 
-    return -1;
-  }
+        ctx.fillStyle =
+          "white";
+
+      }
 
 
-  /* =========================================================
-     Apple Pencil判定
-     ========================================================= */
-
-  function pointerAllowed(e) {
-
-    if (
-      e.pointerType ===
-      "pen"
-    ) {
-
-      return true;
-    }
+      ctx.fill();
 
 
-    if (
-      ALLOW_MOUSE_FOR_DEBUG &&
-      e.pointerType ===
-      "mouse"
-    ) {
-
-      return true;
-    }
+      ctx.strokeStyle =
+        "#111";
 
 
-    if (
-      !REQUIRE_PEN
-    ) {
-
-      return true;
-    }
+      ctx.lineWidth =
+        2;
 
 
-    return false;
-  }
+      ctx.stroke();
 
 
-  /* =========================================================
-     Event log
-     ========================================================= */
-
-  function logEvent(
-    eventType,
-    extra={}
-  ) {
-
-    if (
-      practice
-    ) {
-      return;
-    }
+      ctx.fillStyle =
+        "#111";
 
 
-    eventLog.push({
-
-      participant_id:
-        participantID,
-
-      timepoint_code:
-        selectedTimepoint.code,
-
-      timepoint_name:
-        selectedTimepoint.name,
-
-      set_number:
-        selectedSetNumber,
-
-      test:
-        type,
-
-      repetition:
-        repetition,
-
-      form_number:
-        formNumber,
-
-      event:
-        eventType,
-
-      elapsed_ms:
-        started
-        ?
-        performance.now() -
-        taskStart
-        :
-        0,
-
-      ...extra
-
-    });
-  }
+      let fontSize =
+        19;
 
 
-  /* =========================================================
-     正しいターゲット
-     ========================================================= */
+      if (
+        point.label.length >= 2
+      ) {
 
-  function registerCorrectTarget(
-    index
-  ) {
+        fontSize =
+          16;
 
-    const point =
-      points[index];
+      }
 
 
-    const elapsed =
-      performance.now() -
-      taskStart;
+      ctx.font =
+
+        `bold ${fontSize}px Arial`;
 
 
-    targetArrivals.push({
+      ctx.textAlign =
+        "center";
 
-      order:
-        index + 1,
 
-      label:
+      ctx.textBaseline =
+        "middle";
+
+
+      ctx.fillText(
+
         point.label,
 
-      elapsed_ms:
-        elapsed,
+        point.x,
+
+        point.y
+
+      );
+
+    }
+
+  );
+
+}
+
+
+drawScene();
+
+
+/* =========================================================
+   Pointer座標
+========================================================= */
+
+
+function getPointerPosition(e) {
+
+
+  const rect =
+
+    canvas
+      .getBoundingClientRect();
+
+
+  return {
+
+    x:
+      e.clientX
+      -
+      rect.left,
+
+    y:
+      e.clientY
+      -
+      rect.top
+
+  };
+
+}
+
+
+/* =========================================================
+   ターゲット検索
+========================================================= */
+
+
+function findTargetAt(
+  x,
+  y
+) {
+
+
+  for (
+
+    let i = 0;
+
+    i < points.length;
+
+    i++
+
+  ) {
+
+
+    const dx =
+
+      x
+      -
+      points[i].x;
+
+
+    const dy =
+
+      y
+      -
+      points[i].y;
+
+
+    const distance =
+
+      Math.sqrt(
+
+        dx * dx
+        +
+        dy * dy
+
+      );
+
+
+    if (
+      distance <= TARGET_RADIUS
+    ) {
+
+      return i;
+
+    }
+
+  }
+
+
+  return -1;
+
+}
+
+
+/* =========================================================
+   Apple Pencil判定
+========================================================= */
+
+
+function pointerAllowed(e) {
+
+
+  if (
+    e.pointerType === "pen"
+  ) {
+
+    return true;
+
+  }
+
+
+  if (
+
+    ALLOW_MOUSE_FOR_DEBUG
+
+    &&
+
+    e.pointerType === "mouse"
+
+  ) {
+
+    return true;
+
+  }
+
+
+  if (
+    !REQUIRE_PEN
+  ) {
+
+    return true;
+
+  }
+
+
+  return false;
+
+}
+
+
+/* =========================================================
+   Event log
+========================================================= */
+
+
+function logEvent(
+  eventType,
+  extra = {}
+) {
+
+
+  if (
+    practice
+  ) {
+
+    return;
+
+  }
+
+
+  eventLog.push({
+
+    participant_id:
+      participantID,
+
+    timepoint_code:
+      selectedTimepoint.code,
+
+    timepoint_name:
+      selectedTimepoint.name,
+
+    set_number:
+      selectedSetNumber,
+
+    test:
+      type,
+
+    repetition:
+      repetition,
+
+    form_number:
+      formNumber,
+
+    event:
+      eventType,
+
+    elapsed_ms:
+
+      started
+
+      ?
+
+      performance.now()
+      -
+      taskStart
+
+      :
+
+      0,
+
+    ...extra
+
+  });
+
+}
+
+
+/* =========================================================
+   正しいターゲット到達
+========================================================= */
+
+
+function registerCorrectTarget(
+  index
+) {
+
+
+  const point =
+    points[index];
+
+
+  const elapsed =
+
+    performance.now()
+    -
+    taskStart;
+
+
+  targetArrivals.push({
+
+    order:
+      index + 1,
+
+    label:
+      point.label,
+
+    elapsed_ms:
+      elapsed,
+
+    x:
+      point.x,
+
+    y:
+      point.y
+
+  });
+
+
+  logEvent(
+
+    "target_hit",
+
+    {
+
+      target_order:
+        index + 1,
+
+      target_label:
+        point.label,
 
       x:
         point.x,
@@ -2613,531 +3459,63 @@ function startTask(config) {
       y:
         point.y
 
-    });
+    }
+
+  );
 
 
-    logEvent(
-      "target_hit",
-      {
-
-        target_order:
-          index + 1,
-
-        target_label:
-          point.label,
-
-        x:
-          point.x,
-
-        y:
-          point.y
-
-      }
-    );
+  expectedIndex++;
 
 
-    expectedIndex +=
-      1;
+  /*
+    最終ターゲット到達
+  */
+
+  if (
+    expectedIndex >= points.length
+  ) {
+
+
+    completed =
+      true;
 
 
     /*
-      最終ターゲット
+      1への接触
+      ↓
+      最終ターゲット到達
+
+      の完遂時間
     */
 
-    if (
-      expectedIndex >=
-      points.length
-    ) {
+    completionTime =
 
-      completed =
-        true;
+      performance.now()
+      -
+      taskStart;
 
-
-      completionTime =
-        performance.now() -
-        taskStart;
-
-
-      if (
-        drawing &&
-        penDownStart !== null
-      ) {
-
-        penDownDuration +=
-
-          performance.now() -
-          penDownStart;
-
-
-        penDownStart =
-          null;
-      }
-
-
-      drawing =
-        false;
-
-
-      if (
-        currentSegment.length >
-        0
-      ) {
-
-        segments.push(
-          currentSegment
-        );
-      }
-
-
-      currentSegment =
-        [];
-
-
-      drawScene();
-
-
-      setTimeout(
-        finishTask,
-        250
-      );
-    }
-  }
-
-
-  /* =========================================================
-     Error
-     ========================================================= */
-
-  function registerError(
-    targetIndex
-  ) {
 
     if (
-      targetIndex ===
-      activeWrongTarget
+
+      drawing
+
+      &&
+
+      penDownStart !== null
+
     ) {
 
-      return;
-    }
 
+      penDownDuration +=
 
-    activeWrongTarget =
-      targetIndex;
-
-
-    errorCount +=
-      1;
-
-
-    logEvent(
-      "error",
-      {
-
-        expected_label:
-          points[
-            expectedIndex
-          ]?.label || "",
-
-        touched_label:
-          points[
-            targetIndex
-          ]?.label || ""
-
-      }
-    );
-
-
-    const message =
-      document
-      .getElementById(
-        "taskMessage"
-      );
-
-
-    if (message) {
-
-      message.textContent =
-        "順番が違います。直前の正しい位置から続けてください。";
-
-
-      setTimeout(
-        function() {
-
-          const m =
-            document
-            .getElementById(
-              "taskMessage"
-            );
-
-
-          if (m) {
-
-            m.textContent =
-              type === "A"
-              ?
-              "Apple Pencilで1から順番につないでください"
-              :
-              "Apple Pencilで数字と英字を交互につないでください";
-
-          }
-
-        },
-        850
-      );
-    }
-  }
-
-
-  /* =========================================================
-     Pointer Down
-     ========================================================= */
-
-  canvas.addEventListener(
-    "pointerdown",
-    function(e) {
-
-      e.preventDefault();
-
-
-      if (
-        completed ||
-        !pointerAllowed(e)
-      ) {
-
-        return;
-      }
-
-
-      const pos =
-        getPointerPosition(e);
-
-
-      const targetIndex =
-        findTargetAt(
-          pos.x,
-          pos.y
-        );
-
-
-      /*
-        開始前
-      */
-
-      if (
-        !started
-      ) {
-
-        if (
-          targetIndex !== 0
-        ) {
-
-          const message =
-            document
-            .getElementById(
-              "taskMessage"
-            );
-
-
-          if (message) {
-
-            message.textContent =
-              `最初は ${points[0].label} から開始してください`;
-          }
-
-
-          return;
-        }
-
-
-        started =
-          true;
-
-
-        taskStart =
-          performance.now();
-
-
-        drawing =
-          true;
-
-
-        penDownStart =
-          performance.now();
-
-
-        currentSegment =
-          [
-            {
-              x:
-                points[0].x,
-
-              y:
-                points[0].y
-            }
-          ];
-
-
-        lastPoint =
-          {
-            x:
-              points[0].x,
-
-            y:
-              points[0].y
-          };
-
-
-        registerCorrectTarget(
-          0
-        );
-
-
-        drawScene();
-
-
-        return;
-      }
-
-
-      /*
-        離筆後再開
-      */
-
-      const previousIndex =
-        expectedIndex -
-        1;
-
-
-      if (
-        previousIndex >= 0 &&
-        targetIndex !==
-        previousIndex
-      ) {
-
-        const message =
-          document
-          .getElementById(
-            "taskMessage"
-          );
-
-
-        if (message) {
-
-          message.textContent =
-            `直前の ${points[previousIndex].label} から再開してください`;
-        }
-
-
-        return;
-      }
-
-
-      drawing =
-        true;
+        performance.now()
+        -
+        penDownStart;
 
 
       penDownStart =
-        performance.now();
+        null;
 
-
-      currentSegment =
-        [
-          {
-            x:
-              points[
-                previousIndex
-              ].x,
-
-            y:
-              points[
-                previousIndex
-              ].y
-          }
-        ];
-
-
-      lastPoint =
-        {
-
-          x:
-            points[
-              previousIndex
-            ].x,
-
-          y:
-            points[
-              previousIndex
-            ].y
-
-        };
-
-
-      logEvent(
-        "pen_down",
-        {
-
-          resume_label:
-            points[
-              previousIndex
-            ].label
-
-        }
-      );
-    }
-  );
-
-
-  /* =========================================================
-     Pointer Move
-     ========================================================= */
-
-  canvas.addEventListener(
-    "pointermove",
-    function(e) {
-
-      e.preventDefault();
-
-
-      if (
-        !drawing ||
-        completed ||
-        !pointerAllowed(e)
-      ) {
-
-        return;
-      }
-
-
-      const pos =
-        getPointerPosition(e);
-
-
-      /*
-        描画距離
-      */
-
-      if (
-        lastPoint
-      ) {
-
-        const dx =
-          pos.x -
-          lastPoint.x;
-
-
-        const dy =
-          pos.y -
-          lastPoint.y;
-
-
-        const distance =
-          Math.sqrt(
-            dx*dx +
-            dy*dy
-          );
-
-
-        if (
-          distance >= 2
-        ) {
-
-          totalDistance +=
-            distance;
-
-
-          currentSegment.push({
-
-            x:
-              pos.x,
-
-            y:
-              pos.y
-
-          });
-
-
-          lastPoint =
-            {
-
-              x:
-                pos.x,
-
-              y:
-                pos.y
-
-            };
-        }
-      }
-
-
-      /*
-        円判定
-      */
-
-      const targetIndex =
-        findTargetAt(
-          pos.x,
-          pos.y
-        );
-
-
-      if (
-        targetIndex === -1
-      ) {
-
-        activeWrongTarget =
-          null;
-
-      }
-
-
-      else if (
-        targetIndex ===
-        expectedIndex
-      ) {
-
-        activeWrongTarget =
-          null;
-
-
-        registerCorrectTarget(
-          targetIndex
-        );
-
-      }
-
-
-      else if (
-        targetIndex >
-        expectedIndex
-      ) {
-
-        registerError(
-          targetIndex
-        );
-      }
-
-
-      drawScene();
-    }
-  );
-
-
-  /* =========================================================
-     Pointer Up
-     ========================================================= */
-
-  function pointerEnd(e) {
-
-    e.preventDefault();
-
-
-    if (
-      !drawing ||
-      completed
-    ) {
-
-      return;
     }
 
 
@@ -3146,28 +3524,14 @@ function startTask(config) {
 
 
     if (
-      penDownStart !== null
+      currentSegment.length > 0
     ) {
 
-      penDownDuration +=
-
-        performance.now() -
-        penDownStart;
-
-
-      penDownStart =
-        null;
-    }
-
-
-    if (
-      currentSegment.length >
-      0
-    ) {
 
       segments.push(
         currentSegment
       );
+
     }
 
 
@@ -3175,170 +3539,920 @@ function startTask(config) {
       [];
 
 
-    lastPoint =
-      null;
+    drawScene();
 
 
-    /*
-      課題途中の離筆
-    */
+    setTimeout(
 
-    penLiftCount +=
-      1;
+      finishTask,
 
+      250
 
-    logEvent(
-      "pen_lift",
-      {
-
-        pen_lift_count:
-          penLiftCount
-
-      }
     );
 
+  }
 
-    drawScene();
+}
+
+
+/* =========================================================
+   Error
+========================================================= */
+
+
+function registerError(
+  targetIndex
+) {
+
+
+  /*
+    同じ誤ターゲット上を
+    動いている間は1エラーとする
+  */
+
+  if (
+    targetIndex === activeWrongTarget
+  ) {
+
+    return;
+
   }
 
 
-  canvas.addEventListener(
-    "pointerup",
-    pointerEnd
+  activeWrongTarget =
+    targetIndex;
+
+
+  errorCount++;
+
+
+  logEvent(
+
+    "error",
+
+    {
+
+      expected_label:
+
+        points[
+          expectedIndex
+        ]
+        ?.label
+        ||
+        "",
+
+
+      touched_label:
+
+        points[
+          targetIndex
+        ]
+        ?.label
+        ||
+        ""
+
+    }
+
   );
 
 
-  canvas.addEventListener(
-    "pointercancel",
-    pointerEnd
-  );
+  const message =
+
+    document.getElementById(
+      "taskMessage"
+    );
 
 
-  /* =========================================================
-     終了
-     ========================================================= */
+  if (
+    message
+  ) {
 
-  function finishTask() {
+
+    message.textContent =
+
+      "順番が違います。直前の正しい位置から続けてください。";
+
+
+    setTimeout(
+
+      function() {
+
+
+        const element =
+
+          document.getElementById(
+            "taskMessage"
+          );
+
+
+        if (
+          element
+        ) {
+
+
+          element.textContent =
+
+            type === "A"
+
+            ?
+
+            "Apple Pencilで「1」から順番につないでください"
+
+            :
+
+            "Apple Pencilで「1」から数字と英字を交互につないでください";
+
+        }
+
+      },
+
+      850
+
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   Pointer Down
+
+   ★ 最重要
+   Apple Pencilが最初の「1」に触れた瞬間を
+   測定開始時刻とする
+========================================================= */
+
+
+canvas.addEventListener(
+
+  "pointerdown",
+
+  function(e) {
+
+
+    e.preventDefault();
+
 
     if (
-      practice
+
+      completed
+
+      ||
+
+      !pointerAllowed(e)
+
     ) {
 
-      onComplete();
-
       return;
+
     }
 
 
-    const averagePenSpeed =
-      penDownDuration > 0
-      ?
-      totalDistance /
-      (
-        penDownDuration /
-        1000
-      )
-      :
-      0;
+    const pos =
+
+      getPointerPosition(e);
 
 
-    const pauseTime =
-      completionTime -
-      penDownDuration;
+    const targetIndex =
+
+      findTargetAt(
+
+        pos.x,
+
+        pos.y
+
+      );
 
 
-    const result = {
+    /* =====================================================
+       開始前
+    ===================================================== */
 
-      participant_id:
-        participantID,
 
-      timepoint_code:
-        selectedTimepoint.code,
+    if (
+      !started
+    ) {
 
-      timepoint_name:
-        selectedTimepoint.name,
 
-      set_number:
-        selectedSetNumber,
+      /*
+        最初のターゲット以外では
+        測定開始しない
+      */
 
-      test:
-        type,
+      if (
+        targetIndex !== 0
+      ) {
 
-      repetition:
-        repetition,
 
-      form_number:
-        formNumber,
+        const message =
 
-      completion_ms:
-        completionTime,
+          document.getElementById(
+            "taskMessage"
+          );
 
-      completion_sec:
-        completionTime /
-        1000,
 
-      errors:
-        errorCount,
+        if (
+          message
+        ) {
 
-      pen_lifts:
-        penLiftCount,
 
-      total_distance_px:
-        totalDistance,
+          message.textContent =
 
-      pen_down_ms:
-        penDownDuration,
+            `最初は ${points[0].label} から開始してください`;
 
-      pause_ms:
-        pauseTime,
+        }
 
-      average_pen_speed_px_sec:
-        averagePenSpeed,
 
-      target_arrivals:
-        targetArrivals,
+        return;
 
-      layout_metrics:
-        layoutMetrics || {}
+      }
+
+
+      /*
+        ★ Apple Pencilが
+        「1」に触れたこの瞬間を0 msにする
+      */
+
+      const startTimestamp =
+
+        performance.now();
+
+
+      started =
+        true;
+
+
+      taskStart =
+        startTimestamp;
+
+
+      drawing =
+        true;
+
+
+      /*
+        接触開始時刻も
+        完全に同じtimestamp
+      */
+
+      penDownStart =
+        startTimestamp;
+
+
+      currentSegment = [
+
+        {
+
+          x:
+            points[0].x,
+
+          y:
+            points[0].y
+
+        }
+
+      ];
+
+
+      lastPoint = {
+
+        x:
+          points[0].x,
+
+        y:
+          points[0].y
+
+      };
+
+
+      /*
+        最初の1を
+        正答ターゲットとして登録
+      */
+
+      registerCorrectTarget(
+        0
+      );
+
+
+      logEvent(
+
+        "task_start",
+
+        {
+          start_label:
+            points[0].label
+        }
+
+      );
+
+
+      drawScene();
+
+
+      return;
+
+    }
+
+
+    /* =====================================================
+       離筆後の再開
+    ===================================================== */
+
+
+    const previousIndex =
+
+      expectedIndex - 1;
+
+
+    /*
+      直前に正しく到達した円から
+      再開させる
+    */
+
+    if (
+
+      previousIndex >= 0
+
+      &&
+
+      targetIndex !== previousIndex
+
+    ) {
+
+
+      const message =
+
+        document.getElementById(
+          "taskMessage"
+        );
+
+
+      if (
+        message
+      ) {
+
+
+        message.textContent =
+
+          `直前の ${points[previousIndex].label} から再開してください`;
+
+      }
+
+
+      return;
+
+    }
+
+
+    drawing =
+      true;
+
+
+    penDownStart =
+
+      performance.now();
+
+
+    currentSegment = [
+
+      {
+
+        x:
+          points[
+            previousIndex
+          ].x,
+
+        y:
+          points[
+            previousIndex
+          ].y
+
+      }
+
+    ];
+
+
+    lastPoint = {
+
+      x:
+        points[
+          previousIndex
+        ].x,
+
+      y:
+        points[
+          previousIndex
+        ].y
 
     };
 
 
-    onComplete(
-      result
+    logEvent(
+
+      "pen_down",
+
+      {
+
+        resume_label:
+
+          points[
+            previousIndex
+          ].label
+
+      }
+
     );
+
   }
+
+);
+
+
+/* =========================================================
+   Pointer Move
+========================================================= */
+
+
+canvas.addEventListener(
+
+  "pointermove",
+
+  function(e) {
+
+
+    e.preventDefault();
+
+
+    if (
+
+      !drawing
+
+      ||
+
+      completed
+
+      ||
+
+      !pointerAllowed(e)
+
+    ) {
+
+      return;
+
+    }
+
+
+    const pos =
+
+      getPointerPosition(e);
+
+
+    /*
+      描画距離
+    */
+
+    if (
+      lastPoint
+    ) {
+
+
+      const dx =
+
+        pos.x
+        -
+        lastPoint.x;
+
+
+      const dy =
+
+        pos.y
+        -
+        lastPoint.y;
+
+
+      const distance =
+
+        Math.sqrt(
+
+          dx * dx
+          +
+          dy * dy
+
+        );
+
+
+      if (
+        distance >= 2
+      ) {
+
+
+        totalDistance +=
+          distance;
+
+
+        currentSegment.push({
+
+          x:
+            pos.x,
+
+          y:
+            pos.y
+
+        });
+
+
+        lastPoint = {
+
+          x:
+            pos.x,
+
+          y:
+            pos.y
+
+        };
+
+      }
+
+    }
+
+
+    const targetIndex =
+
+      findTargetAt(
+
+        pos.x,
+
+        pos.y
+
+      );
+
+
+    /*
+      円の外
+    */
+
+    if (
+      targetIndex === -1
+    ) {
+
+
+      activeWrongTarget =
+        null;
+
+    }
+
+
+    /*
+      次の正しいターゲット
+    */
+
+    else if (
+      targetIndex === expectedIndex
+    ) {
+
+
+      activeWrongTarget =
+        null;
+
+
+      registerCorrectTarget(
+        targetIndex
+      );
+
+    }
+
+
+    /*
+      まだ到達すべきでない
+      ターゲットに接触
+    */
+
+    else if (
+      targetIndex > expectedIndex
+    ) {
+
+
+      registerError(
+        targetIndex
+      );
+
+    }
+
+
+    drawScene();
+
+  }
+
+);
+
+
+/* =========================================================
+   Pointer Up
+========================================================= */
+
+
+function pointerEnd(e) {
+
+
+  e.preventDefault();
+
+
+  /*
+    開始前の離筆は
+    カウントしない
+  */
+
+  if (
+    !started
+  ) {
+
+    return;
+
+  }
+
+
+  if (
+
+    !drawing
+
+    ||
+
+    completed
+
+  ) {
+
+    return;
+
+  }
+
+
+  drawing =
+    false;
+
+
+  if (
+    penDownStart !== null
+  ) {
+
+
+    penDownDuration +=
+
+      performance.now()
+      -
+      penDownStart;
+
+
+    penDownStart =
+      null;
+
+  }
+
+
+  if (
+    currentSegment.length > 0
+  ) {
+
+
+    segments.push(
+      currentSegment
+    );
+
+  }
+
+
+  currentSegment =
+    [];
+
+
+  lastPoint =
+    null;
+
+
+  /*
+    開始後の離筆のみカウント
+  */
+
+  penLiftCount++;
+
+
+  logEvent(
+
+    "pen_lift",
+
+    {
+
+      pen_lift_count:
+        penLiftCount
+
+    }
+
+  );
+
+
+  drawScene();
+
+}
+
+
+canvas.addEventListener(
+
+  "pointerup",
+
+  pointerEnd
+
+);
+
+
+canvas.addEventListener(
+
+  "pointercancel",
+
+  pointerEnd
+
+);
+
+
+/* =========================================================
+   課題終了
+========================================================= */
+
+
+function finishTask() {
+
+
+  if (
+    practice
+  ) {
+
+
+    onComplete();
+
+    return;
+
+  }
+
+
+  const averagePenSpeed =
+
+    penDownDuration > 0
+
+    ?
+
+    totalDistance
+
+    /
+
+    (
+      penDownDuration / 1000
+    )
+
+    :
+
+    0;
+
+
+  /*
+    完遂時間から
+    Apple Pencil接触時間を引いた時間
+  */
+
+  const pauseTime =
+
+    completionTime
+    -
+    penDownDuration;
+
+
+  const result = {
+
+
+    participant_id:
+      participantID,
+
+
+    timepoint_code:
+      selectedTimepoint.code,
+
+
+    timepoint_name:
+      selectedTimepoint.name,
+
+
+    set_number:
+      selectedSetNumber,
+
+
+    test:
+      type,
+
+
+    repetition:
+      repetition,
+
+
+    form_number:
+      formNumber,
+
+
+    completion_ms:
+      completionTime,
+
+
+    completion_sec:
+
+      completionTime
+      /
+      1000,
+
+
+    errors:
+      errorCount,
+
+
+    pen_lifts:
+      penLiftCount,
+
+
+    total_distance_px:
+      totalDistance,
+
+
+    pen_down_ms:
+      penDownDuration,
+
+
+    pause_ms:
+      pauseTime,
+
+
+    average_pen_speed_px_sec:
+      averagePenSpeed,
+
+
+    target_arrivals:
+      targetArrivals,
+
+
+    layout_metrics:
+      layoutMetrics || {}
+
+  };
+
+
+  onComplete(
+    result
+  );
+
+}
+
 }
 
 
 /* =========================================================
    26. 結果取得
-   ========================================================= */
+========================================================= */
+
 
 function getResult(
   type,
   repetition
 ) {
 
-  return results.find(
-    r =>
 
-      r.test === type &&
-      r.repetition === repetition
+  return results.find(
+
+    result =>
+
+      result.test === type
+
+      &&
+
+      result.repetition === repetition
+
   );
+
 }
 
 
 /* =========================================================
    27. Mean
-   ========================================================= */
+========================================================= */
+
 
 function mean(values) {
 
+
   const valid =
+
     values.filter(
-      v =>
-        Number.isFinite(v)
+
+      value =>
+        Number.isFinite(
+          value
+        )
+
     );
 
 
@@ -3347,79 +4461,177 @@ function mean(values) {
   ) {
 
     return NaN;
+
   }
 
 
   return (
+
     valid.reduce(
+
       (a,b) =>
         a+b,
+
       0
+
     )
+
     /
+
     valid.length
+
   );
+
 }
 
 
 /* =========================================================
    28. Format
-   ========================================================= */
+========================================================= */
+
 
 function format(
   value,
-  digits=2
+  digits = 2
 ) {
 
+
   if (
-    !Number.isFinite(value)
+    !Number.isFinite(
+      value
+    )
   ) {
 
     return "";
+
   }
 
 
-  return Number(value)
-    .toFixed(
-      digits
-    );
+  return Number(
+    value
+  ).toFixed(
+    digits
+  );
+
 }
 
 
 /* =========================================================
-   29. 結果表示
-   ========================================================= */
+   29. Log(B/A)
+========================================================= */
+
+
+function calculateLogRatio(
+  A,
+  B
+) {
+
+
+  if (
+
+    !Number.isFinite(A)
+
+    ||
+
+    !Number.isFinite(B)
+
+    ||
+
+    A <= 0
+
+    ||
+
+    B <= 0
+
+  ) {
+
+    return NaN;
+
+  }
+
+
+  /*
+    Natural logarithm
+  */
+
+  return Math.log(
+    B / A
+  );
+
+}
+
+
+/* =========================================================
+   30. 結果画面
+========================================================= */
+
 
 function showResults() {
+
 
   const rows =
     [];
 
 
   for (
-    let rep=1;
-    rep<=3;
-    rep++
+    let repetition = 1;
+    repetition <= 3;
+    repetition++
   ) {
 
+
     const A =
+
       getResult(
         "A",
-        rep
+        repetition
       );
 
 
     const B =
+
       getResult(
         "B",
-        rep
+        repetition
+      );
+
+
+    const difference =
+
+      B.completion_sec
+      -
+      A.completion_sec;
+
+
+    const ratio =
+
+      B.completion_sec
+      /
+      A.completion_sec;
+
+
+    const proportionalScore =
+
+      difference
+      /
+      A.completion_sec;
+
+
+    const logRatio =
+
+      calculateLogRatio(
+
+        A.completion_sec,
+
+        B.completion_sec
+
       );
 
 
     rows.push({
 
       repetition:
-        rep,
+        repetition,
 
       A:
         A,
@@ -3428,64 +4640,159 @@ function showResults() {
         B,
 
       difference:
-        B.completion_sec -
-        A.completion_sec,
+        difference,
 
       ratio:
-        B.completion_sec /
-        A.completion_sec
+        ratio,
+
+      proportional:
+        proportionalScore,
+
+      logRatio:
+        logRatio
 
     });
+
   }
 
 
   const meanA =
+
     mean(
+
       rows.map(
-        r =>
-          r.A.completion_sec
+        row =>
+          row.A.completion_sec
       )
+
     );
 
 
   const meanB =
+
     mean(
+
       rows.map(
-        r =>
-          r.B.completion_sec
+        row =>
+          row.B.completion_sec
       )
+
     );
 
 
   const meanDifference =
+
     mean(
+
       rows.map(
-        r =>
-          r.difference
+        row =>
+          row.difference
       )
+
     );
 
 
   const meanRatio =
+
     mean(
+
       rows.map(
-        r =>
-          r.ratio
+        row =>
+          row.ratio
       )
+
     );
 
 
-  document
-    .getElementById(
-      "app"
-    )
-    .innerHTML = `
+  const meanProportional =
+
+    mean(
+
+      rows.map(
+        row =>
+          row.proportional
+      )
+
+    );
+
+
+  const meanLogRatio =
+
+    mean(
+
+      rows.map(
+        row =>
+          row.logRatio
+      )
+
+    );
+
+
+  const meanAErrors =
+
+    mean(
+
+      rows.map(
+        row =>
+          row.A.errors
+      )
+
+    );
+
+
+  const meanBErrors =
+
+    mean(
+
+      rows.map(
+        row =>
+          row.B.errors
+      )
+
+    );
+
+
+  const meanALifts =
+
+    mean(
+
+      rows.map(
+        row =>
+          row.A.pen_lifts
+      )
+
+    );
+
+
+  const meanBLifts =
+
+    mean(
+
+      rows.map(
+        row =>
+          row.B.pen_lifts
+      )
+
+    );
+
+
+  document.getElementById(
+    "app"
+  ).innerHTML = `
 
     <div class="screen">
 
+
       <h2>
-        測定結果
+        【TMT課題 結果】
       </h2>
+
+
+      <p>
+        被験者ID：
+        ${participantID}
+      </p>
+
 
       <p>
         ${selectedTimepoint.name}
@@ -3494,103 +4801,154 @@ function showResults() {
 
       <table class="resultTable">
 
+
         <tr>
 
-          <th>回</th>
+          <th>
+            回
+          </th>
 
-          <th>A form</th>
+          <th>
+            A時間
+          </th>
 
-          <th>A時間</th>
+          <th>
+            B時間
+          </th>
 
-          <th>B form</th>
+          <th>
+            B−A
+          </th>
 
-          <th>B時間</th>
+          <th>
+            B/A
+          </th>
 
-          <th>B−A</th>
+          <th>
+            (B−A)/A
+          </th>
 
-          <th>B/A</th>
+          <th>
+            Log(B/A)
+          </th>
 
-          <th>A誤</th>
+          <th>
+            A誤
+          </th>
 
-          <th>B誤</th>
+          <th>
+            B誤
+          </th>
 
-          <th>A離筆</th>
+          <th>
+            A離筆
+          </th>
 
-          <th>B離筆</th>
+          <th>
+            B離筆
+          </th>
 
         </tr>
 
 
         ${
+
           rows.map(
-            r => `
 
-            <tr>
+            row => `
 
-              <td>
-                ${r.repetition}
-              </td>
+              <tr>
 
-              <td>
-                A${String(
-                  r.A.form_number
-                ).padStart(2,"0")}
-              </td>
+                <td>
+                  ${row.repetition}
+                </td>
 
-              <td>
-                ${format(
-                  r.A.completion_sec,
-                  2
-                )}
-              </td>
 
-              <td>
-                B${String(
-                  r.B.form_number
-                ).padStart(2,"0")}
-              </td>
+                <td>
 
-              <td>
-                ${format(
-                  r.B.completion_sec,
-                  2
-                )}
-              </td>
+                  ${format(
+                    row.A.completion_sec,
+                    2
+                  )}
 
-              <td>
-                ${format(
-                  r.difference,
-                  2
-                )}
-              </td>
+                </td>
 
-              <td>
-                ${format(
-                  r.ratio,
-                  3
-                )}
-              </td>
 
-              <td>
-                ${r.A.errors}
-              </td>
+                <td>
 
-              <td>
-                ${r.B.errors}
-              </td>
+                  ${format(
+                    row.B.completion_sec,
+                    2
+                  )}
 
-              <td>
-                ${r.A.pen_lifts}
-              </td>
+                </td>
 
-              <td>
-                ${r.B.pen_lifts}
-              </td>
 
-            </tr>
+                <td>
+
+                  ${format(
+                    row.difference,
+                    2
+                  )}
+
+                </td>
+
+
+                <td>
+
+                  ${format(
+                    row.ratio,
+                    3
+                  )}
+
+                </td>
+
+
+                <td>
+
+                  ${format(
+                    row.proportional,
+                    3
+                  )}
+
+                </td>
+
+
+                <td>
+
+                  ${format(
+                    row.logRatio,
+                    3
+                  )}
+
+                </td>
+
+
+                <td>
+                  ${row.A.errors}
+                </td>
+
+
+                <td>
+                  ${row.B.errors}
+                </td>
+
+
+                <td>
+                  ${row.A.pen_lifts}
+                </td>
+
+
+                <td>
+                  ${row.B.pen_lifts}
+                </td>
+
+              </tr>
 
             `
+
           ).join("")
+
         }
 
       </table>
@@ -3602,22 +4960,26 @@ function showResults() {
 
 
       <p>
-        TMT-A平均：
-        ${format(
-          meanA,
-          2
-        )}
-        秒
+        TMT-A平均完遂時間：
+        <strong>
+          ${format(
+            meanA,
+            2
+          )}
+          秒
+        </strong>
       </p>
 
 
       <p>
-        TMT-B平均：
-        ${format(
-          meanB,
-          2
-        )}
-        秒
+        TMT-B平均完遂時間：
+        <strong>
+          ${format(
+            meanB,
+            2
+          )}
+          秒
+        </strong>
       </p>
 
 
@@ -3640,15 +5002,69 @@ function showResults() {
       </p>
 
 
-      <button
-        id="downloadButton"
-      >
+      <p>
+        (B−A)/A平均：
+        ${format(
+          meanProportional,
+          3
+        )}
+      </p>
+
+
+      <p>
+        Log(B/A)平均：
+        ${format(
+          meanLogRatio,
+          3
+        )}
+      </p>
+
+
+      <p>
+        TMT-A平均エラー数：
+        ${format(
+          meanAErrors,
+          2
+        )}
+      </p>
+
+
+      <p>
+        TMT-B平均エラー数：
+        ${format(
+          meanBErrors,
+          2
+        )}
+      </p>
+
+
+      <p>
+        TMT-A平均離筆回数：
+        ${format(
+          meanALifts,
+          2
+        )}
+      </p>
+
+
+      <p>
+        TMT-B平均離筆回数：
+        ${format(
+          meanBLifts,
+          2
+        )}
+      </p>
+
+
+      <button id="downloadButton">
+
         CSVを保存して終了
+
       </button>
 
     </div>
 
-    `;
+  `;
 
 
   document
@@ -3656,24 +5072,32 @@ function showResults() {
       "downloadButton"
     )
     .addEventListener(
+
       "click",
+
       downloadCSV
+
     );
+
 }
 
 
 /* =========================================================
-   30. CSV escape
-   ========================================================= */
+   31. CSV escape
+========================================================= */
+
 
 function csvEscape(value) {
 
+
   if (
-    value === null ||
+    value === null
+    ||
     value === undefined
   ) {
 
     return "";
+
   }
 
 
@@ -3682,30 +5106,50 @@ function csvEscape(value) {
 
 
   if (
-    text.includes(",") ||
-    text.includes('"') ||
+
+    text.includes(",")
+
+    ||
+
+    text.includes('"')
+
+    ||
+
     text.includes("\n")
+
   ) {
 
+
     text =
-      '"' +
+
+      '"'
+
+      +
+
       text.replace(
         /"/g,
         '""'
-      ) +
+      )
+
+      +
+
       '"';
+
   }
 
 
   return text;
+
 }
 
 
 /* =========================================================
-   31. CSV
-   ========================================================= */
+   32. CSV保存
+========================================================= */
+
 
 function downloadCSV() {
+
 
   let csv =
     "";
@@ -3713,89 +5157,155 @@ function downloadCSV() {
 
   /* ---------------------------------------------------------
      基本情報
-     --------------------------------------------------------- */
+  --------------------------------------------------------- */
+
 
   csv +=
     "===== 基本情報 =====\n";
 
 
   csv +=
-    "被験者ID," +
+    "被験者ID,"
+    +
     csvEscape(
       participantID
-    ) +
+    )
+    +
     "\n";
 
 
   csv +=
-    "測定時点コード," +
-    selectedTimepoint.code +
+    "測定時点コード,"
+    +
+    selectedTimepoint.code
+    +
     "\n";
 
 
   csv +=
-    "測定時点," +
+    "測定時点,"
+    +
     csvEscape(
       selectedTimepoint.name
-    ) +
+    )
+    +
     "\n";
 
 
   csv +=
-    "使用セット," +
-    selectedSetNumber +
+    "使用セット,"
+    +
+    selectedSetNumber
+    +
     "\n";
 
 
   csv +=
-    "被験者セット順," +
+    "被験者セット順,"
+    +
     csvEscape(
-      participantSetOrder
-      .join("-")
-    ) +
+      participantSetOrder.join("-")
+    )
+    +
     "\n";
 
 
   csv +=
-    "実施日時," +
+    "実施日時,"
+    +
     csvEscape(
-      new Date()
-      .toLocaleString(
-        "ja-JP"
-      )
-    ) +
+      sessionStartTime
+    )
+    +
     "\n";
 
 
-  /* ---------------------------------------------------------
+  csv +=
+    "TMT-A→B休憩(秒),"
+    +
+    REST_A_TO_B_SEC
+    +
+    "\n";
+
+
+  csv +=
+    "TMT-B→次A休憩(秒),"
+    +
+    REST_B_TO_A_SEC
+    +
+    "\n";
+
+
+  csv +=
+    "測定開始定義,Apple Pencilが最初の1に接触した瞬間\n";
+
+
+  /* =========================================================
      Summary
-     --------------------------------------------------------- */
+  ========================================================= */
+
 
   csv +=
     "\n===== TMT集計結果 =====\n";
 
 
   csv +=
-    "被験者ID,測定時点,回,Aフォーム,Bフォーム,A時間(秒),B時間(秒),B-A(秒),B/A,Aエラー数,Bエラー数,A離筆回数,B離筆回数,A総描画距離(px),B総描画距離(px),A接触時間(ms),B接触時間(ms),A非接触時間(ms),B非接触時間(ms),A平均描画速度(px/秒),B平均描画速度(px/秒)\n";
+
+    "被験者ID,測定時点,回,Aフォーム,Bフォーム,A時間(秒),B時間(秒),B-A(秒),B/A,(B-A)/A,Log(B/A),Aエラー数,Bエラー数,A離筆回数,B離筆回数,A総描画距離(px),B総描画距離(px),A接触時間(ms),B接触時間(ms),A非接触時間(ms),B非接触時間(ms),A平均描画速度(px/秒),B平均描画速度(px/秒)\n";
 
 
   for (
-    let rep=1;
-    rep<=3;
-    rep++
+    let repetition = 1;
+    repetition <= 3;
+    repetition++
   ) {
 
+
     const A =
+
       getResult(
         "A",
-        rep
+        repetition
       );
 
 
     const B =
+
       getResult(
         "B",
-        rep
+        repetition
+      );
+
+
+    const difference =
+
+      B.completion_sec
+      -
+      A.completion_sec;
+
+
+    const ratio =
+
+      B.completion_sec
+      /
+      A.completion_sec;
+
+
+    const proportional =
+
+      difference
+      /
+      A.completion_sec;
+
+
+    const logRatio =
+
+      calculateLogRatio(
+
+        A.completion_sec,
+
+        B.completion_sec
+
       );
 
 
@@ -3805,9 +5315,11 @@ function downloadCSV() {
 
       selectedTimepoint.code,
 
-      rep,
+      repetition,
 
-      "A" +
+
+      "A"
+      +
       String(
         A.form_number
       ).padStart(
@@ -3815,7 +5327,9 @@ function downloadCSV() {
         "0"
       ),
 
-      "B" +
+
+      "B"
+      +
       String(
         B.form_number
       ).padStart(
@@ -3823,27 +5337,42 @@ function downloadCSV() {
         "0"
       ),
 
+
       format(
         A.completion_sec,
         3
       ),
+
 
       format(
         B.completion_sec,
         3
       ),
 
+
       format(
-        B.completion_sec -
-        A.completion_sec,
+        difference,
         3
       ),
 
+
       format(
-        B.completion_sec /
-        A.completion_sec,
+        ratio,
         4
       ),
+
+
+      format(
+        proportional,
+        4
+      ),
+
+
+      format(
+        logRatio,
+        4
+      ),
+
 
       A.errors,
 
@@ -3853,40 +5382,48 @@ function downloadCSV() {
 
       B.pen_lifts,
 
+
       format(
         A.total_distance_px,
         2
       ),
+
 
       format(
         B.total_distance_px,
         2
       ),
 
+
       format(
         A.pen_down_ms,
         2
       ),
+
 
       format(
         B.pen_down_ms,
         2
       ),
 
+
       format(
         A.pause_ms,
         2
       ),
+
 
       format(
         B.pause_ms,
         2
       ),
 
+
       format(
         A.average_pen_speed_px_sec,
         2
       ),
+
 
       format(
         B.average_pen_speed_px_sec,
@@ -3894,33 +5431,120 @@ function downloadCSV() {
       )
 
     ]
+
     .map(
       csvEscape
     )
+
     .join(",")
+
     +
+
     "\n";
+
   }
 
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      3回平均
-     --------------------------------------------------------- */
+  ========================================================= */
+
 
   const Aresults =
+
     results.filter(
-      r =>
-        r.test ===
-        "A"
+
+      result =>
+        result.test === "A"
+
     );
 
 
   const Bresults =
+
     results.filter(
-      r =>
-        r.test ===
-        "B"
+
+      result =>
+        result.test === "B"
+
     );
+
+
+  const differences = [];
+
+  const ratios = [];
+
+  const proportionals = [];
+
+  const logRatios = [];
+
+
+  for (
+    let repetition = 1;
+    repetition <= 3;
+    repetition++
+  ) {
+
+
+    const A =
+
+      getResult(
+        "A",
+        repetition
+      );
+
+
+    const B =
+
+      getResult(
+        "B",
+        repetition
+      );
+
+
+    const difference =
+
+      B.completion_sec
+      -
+      A.completion_sec;
+
+
+    differences.push(
+      difference
+    );
+
+
+    ratios.push(
+
+      B.completion_sec
+      /
+      A.completion_sec
+
+    );
+
+
+    proportionals.push(
+
+      difference
+      /
+      A.completion_sec
+
+    );
+
+
+    logRatios.push(
+
+      calculateLogRatio(
+
+        A.completion_sec,
+
+        B.completion_sec
+
+      )
+
+    );
+
+  }
 
 
   csv +=
@@ -3932,12 +5556,12 @@ function downloadCSV() {
 
 
   csv +=
-    "TMT-A時間(秒)," +
+    "TMT-A完遂時間(秒),"
+    +
     format(
       mean(
         Aresults.map(
-          r =>
-            r.completion_sec
+          r => r.completion_sec
         )
       ),
       3
@@ -3947,12 +5571,12 @@ function downloadCSV() {
 
 
   csv +=
-    "TMT-B時間(秒)," +
+    "TMT-B完遂時間(秒),"
+    +
     format(
       mean(
         Bresults.map(
-          r =>
-            r.completion_sec
+          r => r.completion_sec
         )
       ),
       3
@@ -3962,12 +5586,64 @@ function downloadCSV() {
 
 
   csv +=
-    "TMT-Aエラー数," +
+    "B-A(秒),"
+    +
+    format(
+      mean(
+        differences
+      ),
+      3
+    )
+    +
+    "\n";
+
+
+  csv +=
+    "B/A,"
+    +
+    format(
+      mean(
+        ratios
+      ),
+      4
+    )
+    +
+    "\n";
+
+
+  csv +=
+    "(B-A)/A,"
+    +
+    format(
+      mean(
+        proportionals
+      ),
+      4
+    )
+    +
+    "\n";
+
+
+  csv +=
+    "Log(B/A),"
+    +
+    format(
+      mean(
+        logRatios
+      ),
+      4
+    )
+    +
+    "\n";
+
+
+  csv +=
+    "TMT-Aエラー数,"
+    +
     format(
       mean(
         Aresults.map(
-          r =>
-            r.errors
+          r => r.errors
         )
       ),
       2
@@ -3977,12 +5653,12 @@ function downloadCSV() {
 
 
   csv +=
-    "TMT-Bエラー数," +
+    "TMT-Bエラー数,"
+    +
     format(
       mean(
         Bresults.map(
-          r =>
-            r.errors
+          r => r.errors
         )
       ),
       2
@@ -3992,12 +5668,12 @@ function downloadCSV() {
 
 
   csv +=
-    "TMT-A離筆回数," +
+    "TMT-A離筆回数,"
+    +
     format(
       mean(
         Aresults.map(
-          r =>
-            r.pen_lifts
+          r => r.pen_lifts
         )
       ),
       2
@@ -4007,12 +5683,12 @@ function downloadCSV() {
 
 
   csv +=
-    "TMT-B離筆回数," +
+    "TMT-B離筆回数,"
+    +
     format(
       mean(
         Bresults.map(
-          r =>
-            r.pen_lifts
+          r => r.pen_lifts
         )
       ),
       2
@@ -4022,7 +5698,8 @@ function downloadCSV() {
 
 
   csv +=
-    "TMT-A平均描画速度," +
+    "TMT-A平均描画速度(px/秒),"
+    +
     format(
       mean(
         Aresults.map(
@@ -4037,7 +5714,8 @@ function downloadCSV() {
 
 
   csv +=
-    "TMT-B平均描画速度," +
+    "TMT-B平均描画速度(px/秒),"
+    +
     format(
       mean(
         Bresults.map(
@@ -4051,34 +5729,41 @@ function downloadCSV() {
     "\n";
 
 
-  /* ---------------------------------------------------------
-     Layout metrics
-     --------------------------------------------------------- */
+  /* =========================================================
+     フォーム難易度指標
+  ========================================================= */
+
 
   csv +=
     "\n===== フォーム難易度指標 =====\n";
 
 
   csv +=
+
     "課題,回,フォーム,総経路長,平均step,stepSD,最大step,水平移動量,垂直移動量,交差数\n";
 
 
   results.forEach(
+
     result => {
 
-      const m =
-        result.layout_metrics ||
-        {};
+
+      const metrics =
+        result.layout_metrics || {};
 
 
       csv += [
 
-        "TMT-" +
+        "TMT-"
+        +
         result.test,
+
 
         result.repetition,
 
-        result.test +
+
+        result.test
+        +
         String(
           result.form_number
         ).padStart(
@@ -4086,136 +5771,167 @@ function downloadCSV() {
           "0"
         ),
 
+
         format(
-          m.totalLength,
+          metrics.totalLength,
           4
         ),
 
+
         format(
-          m.meanStep,
+          metrics.meanStep,
           4
         ),
 
+
         format(
-          m.sdStep,
+          metrics.sdStep,
           4
         ),
 
+
         format(
-          m.maxStep,
+          metrics.maxStep,
           4
         ),
 
+
         format(
-          m.totalAbsX,
+          metrics.totalAbsX,
           4
         ),
 
+
         format(
-          m.totalAbsY,
+          metrics.totalAbsY,
           4
         ),
 
-        m.crossings ?? ""
+
+        metrics.crossings ?? ""
 
       ]
+
       .map(
         csvEscape
       )
+
       .join(",")
+
       +
+
       "\n";
 
     }
+
   );
 
 
-  /* ---------------------------------------------------------
-     Target arrival
-     --------------------------------------------------------- */
+  /* =========================================================
+     各ターゲット到達時間
+  ========================================================= */
+
 
   csv +=
     "\n===== ターゲット到達記録 =====\n";
 
 
   csv +=
+
     "被験者ID,測定時点,課題,回,フォーム,到達順,ラベル,到達時間(ms),X座標,Y座標\n";
 
 
   results.forEach(
+
     result => {
 
+
       result
-      .target_arrivals
-      .forEach(
-        target => {
+        .target_arrivals
+        .forEach(
 
-          csv += [
+          target => {
 
-            participantID,
 
-            selectedTimepoint.code,
+            csv += [
 
-            "TMT-" +
-            result.test,
+              participantID,
 
-            result.repetition,
+              selectedTimepoint.code,
 
-            result.test +
-            String(
-              result.form_number
-            ).padStart(
-              2,
-              "0"
-            ),
+              "TMT-"
+              +
+              result.test,
 
-            target.order,
+              result.repetition,
 
-            target.label,
+              result.test
+              +
+              String(
+                result.form_number
+              ).padStart(
+                2,
+                "0"
+              ),
 
-            format(
-              target.elapsed_ms,
-              2
-            ),
+              target.order,
 
-            format(
-              target.x,
-              2
-            ),
+              target.label,
 
-            format(
-              target.y,
-              2
+              format(
+                target.elapsed_ms,
+                2
+              ),
+
+              format(
+                target.x,
+                2
+              ),
+
+              format(
+                target.y,
+                2
+              )
+
+            ]
+
+            .map(
+              csvEscape
             )
 
-          ]
-          .map(
-            csvEscape
-          )
-          .join(",")
-          +
-          "\n";
+            .join(",")
 
-        }
-      );
+            +
+
+            "\n";
+
+          }
+
+        );
+
     }
+
   );
 
 
-  /* ---------------------------------------------------------
-     Event
-     --------------------------------------------------------- */
+  /* =========================================================
+     Event Log
+  ========================================================= */
+
 
   csv +=
     "\n===== イベント記録 =====\n";
 
 
   csv +=
+
     "被験者ID,測定時点,課題,回,フォーム,イベント,経過時間(ms),期待ラベル,接触ラベル,離筆累積回数,再開ラベル\n";
 
 
   eventLog.forEach(
-    e => {
+
+    event => {
+
 
       csv += [
 
@@ -4223,115 +5939,137 @@ function downloadCSV() {
 
         selectedTimepoint.code,
 
-        "TMT-" +
-        e.test,
+        "TMT-"
+        +
+        event.test,
 
-        e.repetition,
+        event.repetition,
 
-        e.test +
+        event.test
+        +
         String(
-          e.form_number
+          event.form_number
         ).padStart(
           2,
           "0"
         ),
 
-        e.event,
+        event.event,
 
         format(
-          e.elapsed_ms,
+          event.elapsed_ms,
           2
         ),
 
-        e.expected_label ||
+        event.expected_label
+        ||
         "",
 
-        e.touched_label ||
+        event.touched_label
+        ||
         "",
 
-        e.pen_lift_count ||
+        event.pen_lift_count
+        ??
         "",
 
-        e.resume_label ||
+        event.resume_label
+        ||
         ""
 
       ]
+
       .map(
         csvEscape
       )
+
       .join(",")
+
       +
+
       "\n";
+
     }
+
   );
 
 
-  /* ---------------------------------------------------------
-     UTF-8 BOM
-     --------------------------------------------------------- */
+  /* =========================================================
+     UTF-8 BOM付き保存
+  ========================================================= */
+
 
   const bom =
-    new Uint8Array(
-      [
-        0xEF,
-        0xBB,
-        0xBF
-      ]
-    );
+
+    new Uint8Array([
+
+      0xEF,
+
+      0xBB,
+
+      0xBF
+
+    ]);
 
 
   const blob =
+
     new Blob(
+
       [
         bom,
         csv
       ],
+
       {
         type:
           "text/csv;charset=utf-8;"
       }
+
     );
 
 
   const url =
+
     URL.createObjectURL(
       blob
     );
 
 
-  const a =
+  const link =
+
     document.createElement(
       "a"
     );
 
 
-  a.href =
+  link.href =
     url;
 
 
-  a.download =
+  link.download =
 
-    participantID +
-
-    "_" +
-
-    selectedTimepoint.code +
-
+    participantID
+    +
+    "_"
+    +
+    selectedTimepoint.code
+    +
     "_TMT結果.csv";
 
 
   document.body
     .appendChild(
-      a
+      link
     );
 
 
-  a.click();
+  link.click();
 
 
   document.body
     .removeChild(
-      a
+      link
     );
 
 
@@ -4340,38 +6078,45 @@ function downloadCSV() {
   );
 
 
-  document
-    .getElementById(
-      "app"
-    )
-    .innerHTML = `
+  document.getElementById(
+    "app"
+  ).innerHTML = `
 
     <div class="screen">
 
       <h2>
-        終了しました
+        測定終了
       </h2>
 
       <p>
-        CSVファイルを
-        保存しました。
+        CSVファイルを保存しました。
+      </p>
+
+      <p>
+        ご協力ありがとうございました。
       </p>
 
     </div>
 
-    `;
+  `;
+
 }
 
 
 /* =========================================================
-   32. 開始
-   ========================================================= */
+   33. 開始
+========================================================= */
+
 
 checkOrientation();
 
+
 showParticipantScreen();
+
 
 </script>
 
+
 </body>
+
 </html>
