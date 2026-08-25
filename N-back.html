@@ -1,331 +1,3076 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-  <meta charset="UTF-8">
-  <title>N-back Task</title>
 
-  <script src="https://unpkg.com/jspsych@8.2.1"></script>
-  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
-  <script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0"></script>
+<meta charset="UTF-8">
 
-  <link href="https://unpkg.com/jspsych@8.2.1/css/jspsych.css" rel="stylesheet" />
+<title>2-back Task</title>
 
-  <style>
-    body {
-      background-color: white;
-      color: black;
-      font-family: Arial, sans-serif;
-    }
-    .stimulus {
-      font-size: 80px;
-      font-weight: bold;
-    }
-    .text {
-      font-size: 24px;
-      line-height: 1.8;
-      max-width: 900px;
-      margin: auto;
-    }
-  </style>
+<script src="https://unpkg.com/jspsych@8.2.1"></script>
+
+<script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
+
+<script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0"></script>
+
+<link
+  href="https://unpkg.com/jspsych@8.2.1/css/jspsych.css"
+  rel="stylesheet"
+/>
+
+
+<style>
+
+body {
+
+  background-color: white;
+
+  color: black;
+
+  font-family:
+    Arial,
+    sans-serif;
+
+}
+
+
+.stimulus {
+
+  font-size: 80px;
+
+  font-weight: bold;
+
+}
+
+
+.text {
+
+  font-size: 24px;
+
+  line-height: 1.8;
+
+  max-width: 900px;
+
+  margin: auto;
+
+}
+
+
+.countdown {
+
+  font-size: 60px;
+
+  font-weight: bold;
+
+}
+
+
+.result-table {
+
+  margin:
+    20px auto;
+
+  border-collapse:
+    collapse;
+
+  font-size:
+    19px;
+
+}
+
+
+.result-table td {
+
+  border-bottom:
+    1px solid #ccc;
+
+  padding:
+    7px 18px;
+
+  text-align:
+    left;
+
+}
+
+
+.result-table td:last-child {
+
+  text-align:
+    right;
+
+  font-weight:
+    bold;
+
+}
+
+</style>
+
 </head>
+
 
 <body></body>
 
+
 <script>
-  const jsPsych = initJsPsych({
-    on_finish: function() {
-      const participant_id = jsPsych.data.get().values()[0].response.ID;
 
-      jsPsych.data.addProperties({
-        participant_id: participant_id,
-        task: "2-back"
-      });
 
-      const filename = "nback_" + participant_id + "_" + new Date().toISOString().slice(0,10) + ".csv";
-      jsPsych.data.get().localSave("csv", filename);
-    }
-  });
+/* =========================================================
+   1. 基本設定
+========================================================= */
 
-  const timeline = [];
 
-  let participant_id = "";
+/*
+  2-back
+*/
+const N_BACK = 2;
 
-  // =========================
-  // 被験者ID入力
-  // =========================
-  const id_input = {
-    type: jsPsychSurveyText,
-    questions: [
-      {
-        prompt: "被験者IDを入力してください",
-        name: "ID",
-        required: true
-      }
-    ],
-    button_label: "開始",
-    on_finish: function(data) {
-      participant_id = data.response.ID;
-    }
-  };
-  timeline.push(id_input);
 
-  // =========================
-  // 説明画面
-  // =========================
-  const instruction = {
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: `
-      <div class="text">
-        <h2>N-back課題</h2>
-        <p>この課題では、画面中央にアルファベットが1文字ずつ表示されます。</p>
-        <p>現在表示されている文字が、<strong>2つ前に表示された文字と同じかどうか</strong>を判断してください。</p>
+/*
+  練習20試行
+*/
+const PRACTICE_TRIALS = 20;
 
-        <p><strong>同じ場合：</strong> Jキー</p>
-        <p><strong>違う場合：</strong> Fキー</p>
 
-        <p>できるだけ速く、正確に反応してください。</p>
-        <p>まず練習20試行を行います。</p>
+/*
+  本試行
+  50試行 × 2ブロック
+*/
+const MAIN_TRIALS_PER_BLOCK = 50;
 
-        <p>準備ができたらスペースキーを押してください。</p>
-      </div>
-    `,
-    choices: [" "]
-  };
-  timeline.push(instruction);
 
-  // =========================
-  // N-back刺激作成関数
-  // =========================
-  function generateNBackTrials(num_trials, block_name, target_rate = 0.3) {
-    const letters = ["B", "C", "D", "F", "G", "H", "J", "K", "L", "M", "P", "Q", "R", "S", "T"];
-    const trials = [];
+/*
+  各50試行中
 
-    for (let i = 0; i < num_trials; i++) {
-      let stimulus;
-      let is_target = false;
+  最初の2試行を除く48試行のうち
+  15試行をTargetに固定
 
-      if (i >= 2 && Math.random() < target_rate) {
-        stimulus = trials[i - 2].stimulus;
-        is_target = true;
-      } else {
-        do {
-          stimulus = letters[Math.floor(Math.random() * letters.length)];
-        } while (i >= 2 && stimulus === trials[i - 2].stimulus);
-        is_target = false;
-      }
+  15 / 48 = 31.25%
+*/
+const MAIN_TARGETS_PER_BLOCK = 15;
 
-      trials.push({
-        stimulus: stimulus,
-        trial_number: i + 1,
-        block: block_name,
-        is_target: is_target,
-        correct_response: is_target ? "j" : "f"
-      });
-    }
 
-    return trials;
+/*
+  練習は5 Target
+*/
+const PRACTICE_TARGETS = 5;
+
+
+/*
+  刺激提示時間
+*/
+const STIMULUS_DURATION = 500;
+
+
+/*
+  1試行全体
+
+  刺激 500 ms
+  +
+  刺激消失後 1500 ms
+
+  = 2000 ms
+*/
+const TRIAL_DURATION = 2000;
+
+
+/*
+  ブロック間休憩
+*/
+const BREAK_DURATION = 60000;
+
+
+/*
+  使用する英字
+*/
+const LETTERS = [
+
+  "B",
+  "C",
+  "D",
+  "F",
+  "G",
+  "H",
+  "J",
+  "K",
+  "L",
+  "M",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T"
+
+];
+
+
+let participant_id = "";
+
+
+/* =========================================================
+   2. 基本統計
+========================================================= */
+
+
+function mean(values) {
+
+  if (
+    values.length === 0
+  ) {
+
+    return NaN;
+
   }
 
-  // =========================
-  // 試行作成関数
-  // =========================
-  function createNBackBlock(trials) {
-    const block_timeline = [];
 
-    trials.forEach(trial => {
-      block_timeline.push({
-        type: jsPsychHtmlKeyboardResponse,
-        stimulus: `<div class="stimulus">${trial.stimulus}</div>`,
-        choices: ["f", "j"],
-        trial_duration: 1500,
-        stimulus_duration: 1000,
-        response_ends_trial: false,
-        data: {
-          block: trial.block,
-          trial_number: trial.trial_number,
-          stimulus: trial.stimulus,
-          is_target: trial.is_target,
-          correct_response: trial.correct_response
-        },
-        on_finish: function(data) {
-          data.correct = jsPsych.pluginAPI.compareKeys(data.response, data.correct_response);
-          data.no_response = data.response === null;
-        }
-      });
+  return values.reduce(
+    (a,b) => a+b,
+    0
+  ) / values.length;
 
-      block_timeline.push({
-        type: jsPsychHtmlKeyboardResponse,
-        stimulus: "",
-        choices: "NO_KEYS",
-        trial_duration: 500
-      });
+}
+
+
+
+function median(values) {
+
+  if (
+    values.length === 0
+  ) {
+
+    return NaN;
+
+  }
+
+
+  const sorted =
+    [...values]
+      .sort(
+        (a,b) => a-b
+      );
+
+
+  const middle =
+    Math.floor(
+      sorted.length / 2
+    );
+
+
+  if (
+    sorted.length % 2 === 0
+  ) {
+
+    return (
+
+      sorted[
+        middle - 1
+      ]
+
+      +
+
+      sorted[
+        middle
+      ]
+
+    ) / 2;
+
+  }
+
+
+  return sorted[
+    middle
+  ];
+
+}
+
+
+
+function standardDeviation(values) {
+
+  if (
+    values.length < 2
+  ) {
+
+    return NaN;
+
+  }
+
+
+  const m =
+    mean(values);
+
+
+  const variance =
+
+    values.reduce(
+
+      (sum,x) =>
+
+        sum +
+
+        Math.pow(
+          x - m,
+          2
+        ),
+
+      0
+
+    )
+
+    /
+
+    (
+      values.length - 1
+    );
+
+
+  return Math.sqrt(
+    variance
+  );
+
+}
+
+
+/* =========================================================
+   3. inverse normal CDF
+   d-prime計算用
+
+   Acklam approximation
+========================================================= */
+
+
+function normInv(p) {
+
+  if (
+    p <= 0 ||
+    p >= 1
+  ) {
+
+    return NaN;
+
+  }
+
+
+  const a = [
+
+    -3.969683028665376e+01,
+     2.209460984245205e+02,
+    -2.759285104469687e+02,
+     1.383577518672690e+02,
+    -3.066479806614716e+01,
+     2.506628277459239e+00
+
+  ];
+
+
+  const b = [
+
+    -5.447609879822406e+01,
+     1.615858368580409e+02,
+    -1.556989798598866e+02,
+     6.680131188771972e+01,
+    -1.328068155288572e+01
+
+  ];
+
+
+  const c = [
+
+    -7.784894002430293e-03,
+    -3.223964580411365e-01,
+    -2.400758277161838e+00,
+    -2.549732539343734e+00,
+     4.374664141464968e+00,
+     2.938163982698783e+00
+
+  ];
+
+
+  const d = [
+
+     7.784695709041462e-03,
+     3.224671290700398e-01,
+     2.445134137142996e+00,
+     3.754408661907416e+00
+
+  ];
+
+
+  const plow =
+    0.02425;
+
+
+  const phigh =
+    1 - plow;
+
+
+  let q;
+
+  let r;
+
+
+  if (
+    p < plow
+  ) {
+
+    q =
+      Math.sqrt(
+        -2 *
+        Math.log(p)
+      );
+
+
+    return (
+
+      (
+        (
+          (
+            (
+              (
+                c[0] * q
+                + c[1]
+              ) * q
+              + c[2]
+            ) * q
+            + c[3]
+          ) * q
+          + c[4]
+        ) * q
+        + c[5]
+      )
+
+      /
+
+      (
+        (
+          (
+            (
+              d[0] * q
+              + d[1]
+            ) * q
+            + d[2]
+          ) * q
+          + d[3]
+        ) * q
+        + 1
+      )
+
+    );
+
+  }
+
+
+  if (
+    p > phigh
+  ) {
+
+    q =
+      Math.sqrt(
+        -2 *
+        Math.log(
+          1-p
+        )
+      );
+
+
+    return -(
+
+      (
+        (
+          (
+            (
+              (
+                c[0] * q
+                + c[1]
+              ) * q
+              + c[2]
+            ) * q
+            + c[3]
+          ) * q
+          + c[4]
+        ) * q
+        + c[5]
+      )
+
+      /
+
+      (
+        (
+          (
+            (
+              d[0] * q
+              + d[1]
+            ) * q
+            + d[2]
+          ) * q
+          + d[3]
+        ) * q
+        + 1
+      )
+
+    );
+
+  }
+
+
+  q =
+    p - 0.5;
+
+
+  r =
+    q * q;
+
+
+  return (
+
+    (
+      (
+        (
+          (
+            (
+              a[0] * r
+              + a[1]
+            ) * r
+            + a[2]
+          ) * r
+          + a[3]
+        ) * r
+        + a[4]
+      ) * r
+      + a[5]
+    ) * q
+
+    /
+
+    (
+      (
+        (
+          (
+            (
+              b[0] * r
+              + b[1]
+            ) * r
+            + b[2]
+          ) * r
+          + b[3]
+        ) * r
+        + b[4]
+      ) * r
+      + 1
+    )
+
+  );
+
+}
+
+
+/* =========================================================
+   4. Target位置生成
+========================================================= */
+
+
+function makeTargetPositions(
+  numTrials,
+  targetCount
+) {
+
+
+  /*
+    0,1番目は2-back判定できないため
+    Targetにはしない
+  */
+
+  const possible = [];
+
+
+  for (
+    let i = N_BACK;
+    i < numTrials;
+    i++
+  ) {
+
+    possible.push(i);
+
+  }
+
+
+  const shuffled =
+    jsPsych.randomization
+      .shuffle(
+        possible
+      );
+
+
+  return new Set(
+
+    shuffled.slice(
+      0,
+      targetCount
+    )
+
+  );
+
+}
+
+
+/* =========================================================
+   5. N-back刺激列生成
+========================================================= */
+
+
+function generateNBackTrials(
+  numTrials,
+  blockName,
+  targetCount
+) {
+
+
+  const trials = [];
+
+
+  const targetPositions =
+
+    makeTargetPositions(
+      numTrials,
+      targetCount
+    );
+
+
+  for (
+    let i = 0;
+    i < numTrials;
+    i++
+  ) {
+
+
+    let stimulus;
+
+
+    let isTarget =
+      false;
+
+
+    const validNBackTrial =
+      i >= N_BACK;
+
+
+    /* -----------------------------------------------------
+       最初の2試行
+
+       2-back判定不能
+    ----------------------------------------------------- */
+
+    if (
+      !validNBackTrial
+    ) {
+
+
+      stimulus =
+
+        jsPsych.randomization
+          .sampleWithoutReplacement(
+            LETTERS,
+            1
+          )[0];
+
+    }
+
+
+    /* -----------------------------------------------------
+       Target
+    ----------------------------------------------------- */
+
+    else if (
+      targetPositions.has(i)
+    ) {
+
+
+      stimulus =
+        trials[
+          i - N_BACK
+        ].stimulus;
+
+
+      isTarget =
+        true;
+
+    }
+
+
+    /* -----------------------------------------------------
+       Non-target
+
+       2つ前と同じ文字になることを防ぐ
+    ----------------------------------------------------- */
+
+    else {
+
+
+      const forbidden =
+
+        trials[
+          i - N_BACK
+        ].stimulus;
+
+
+      const candidates =
+
+        LETTERS.filter(
+
+          letter =>
+            letter !==
+            forbidden
+
+        );
+
+
+      stimulus =
+
+        jsPsych.randomization
+          .sampleWithoutReplacement(
+            candidates,
+            1
+          )[0];
+
+
+      isTarget =
+        false;
+
+    }
+
+
+    trials.push({
+
+      stimulus:
+        stimulus,
+
+      block:
+        blockName,
+
+      trial_number:
+        i + 1,
+
+      valid_nback_trial:
+        validNBackTrial,
+
+      is_target:
+        isTarget,
+
+      correct_response:
+
+        validNBackTrial
+
+        ?
+
+        (
+          isTarget
+          ?
+          "j"
+          :
+          "f"
+        )
+
+        :
+
+        null
+
     });
 
-    return block_timeline;
   }
 
-  // =========================
-  // 練習20試行
-  // =========================
-  const practice_start = {
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: `
-      <div class="text">
-        <h2>練習試行</h2>
-        <p>これから練習20試行を行います。</p>
-        <p>2つ前と同じ：Jキー<br>2つ前と違う：Fキー</p>
-        <p>スペースキーを押すと始まります。</p>
-      </div>
-    `,
-    choices: [" "]
-  };
-  timeline.push(practice_start);
 
-  const practice_trials = generateNBackTrials(20, "practice");
-  timeline.push(...createNBackBlock(practice_trials));
+  return trials;
 
-  // =========================
-  // 練習結果
-  // =========================
-  const practice_result = {
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: function() {
-      const data = jsPsych.data.get().filter({block: "practice"});
-      const correct = data.filter({correct: true}).count();
-      const total = data.count();
-      const accuracy = Math.round((correct / total) * 100);
+}
 
-      return `
-        <div class="text">
-          <h2>練習結果</h2>
-          <p>正答数：${correct} / ${total}</p>
-          <p>正答率：${accuracy}%</p>
-          <p>次から本試行に入ります。</p>
-          <p>スペースキーを押してください。</p>
-        </div>
-      `;
-    },
-    choices: [" "]
-  };
-  timeline.push(practice_result);
 
-  // =========================
-  // 本試行1 50試行
-  // =========================
-  const main1_start = {
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: `
-      <div class="text">
-        <h2>本試行1</h2>
-        <p>これから本試行1を行います。</p>
-        <p>50試行です。</p>
-        <p>スペースキーを押すと始まります。</p>
-      </div>
-    `,
-    choices: [" "]
-  };
-  timeline.push(main1_start);
+/* =========================================================
+   6. N-back Trial作成
+========================================================= */
 
-  const main1_trials = generateNBackTrials(50, "main1");
-  timeline.push(...createNBackBlock(main1_trials));
 
-  // =========================
-  // 60秒休憩
-  // =========================
-  const break_trial = {
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: `
-      <div class="text">
-        <h2>休憩</h2>
-        <p>60秒間休憩してください。</p>
-        <p id="countdown">残り 60 秒</p>
-      </div>
-    `,
-    choices: "NO_KEYS",
-    trial_duration: 60000,
-    on_load: function() {
-      let timeLeft = 60;
-      const countdown = setInterval(function() {
-        timeLeft--;
-        document.getElementById("countdown").innerHTML = "残り " + timeLeft + " 秒";
-        if (timeLeft <= 0) {
-          clearInterval(countdown);
+function createNBackBlock(
+  trials
+) {
+
+
+  const timeline =
+    [];
+
+
+  trials.forEach(
+    trial => {
+
+
+      timeline.push({
+
+
+        type:
+          jsPsychHtmlKeyboardResponse,
+
+
+        stimulus:
+
+          `<div class="stimulus">
+             ${trial.stimulus}
+           </div>`,
+
+
+        /*
+          最初の2試行では
+          回答させない
+        */
+
+        choices:
+
+          trial.valid_nback_trial
+
+          ?
+
+          ["f","j"]
+
+          :
+
+          "NO_KEYS",
+
+
+        /*
+          Trialは2000 ms継続
+        */
+
+        trial_duration:
+          TRIAL_DURATION,
+
+
+        /*
+          文字だけ500 msで消える
+
+          その後1500 msは空白だが
+          F/J回答は可能
+        */
+
+        stimulus_duration:
+          STIMULUS_DURATION,
+
+
+        /*
+          キーを押しても
+          Trial時間は短縮しない
+        */
+
+        response_ends_trial:
+          false,
+
+
+        data: {
+
+
+          task:
+            "nback",
+
+
+          phase:
+
+            trial.block ===
+            "practice"
+
+            ?
+
+            "practice"
+
+            :
+
+            "main",
+
+
+          block:
+            trial.block,
+
+
+          trial_number:
+            trial.trial_number,
+
+
+          stimulus:
+            trial.stimulus,
+
+
+          valid_nback_trial:
+            trial.valid_nback_trial,
+
+
+          is_target:
+            trial.is_target,
+
+
+          correct_response:
+            trial.correct_response
+
+        },
+
+
+        on_finish:
+        function(data) {
+
+
+          /* ------------------------------------------------
+             最初の2試行
+          ------------------------------------------------ */
+
+          if (
+            !data.valid_nback_trial
+          ) {
+
+
+            data.correct =
+              null;
+
+
+            data.response_type =
+              "initial";
+
+
+            data.no_response =
+              true;
+
+
+            return;
+
+          }
+
+
+          const responseJ =
+
+            jsPsych.pluginAPI
+              .compareKeys(
+                data.response,
+                "j"
+              );
+
+
+          const responseF =
+
+            jsPsych.pluginAPI
+              .compareKeys(
+                data.response,
+                "f"
+              );
+
+
+          data.no_response =
+            data.response === null;
+
+
+          /* ------------------------------------------------
+             Target
+          ------------------------------------------------ */
+
+          if (
+            data.is_target
+          ) {
+
+
+            if (
+              responseJ
+            ) {
+
+
+              data.correct =
+                true;
+
+
+              data.response_type =
+                "hit";
+
+            }
+
+
+            else {
+
+
+              /*
+                Fまたは無反応
+                → Miss
+              */
+
+              data.correct =
+                false;
+
+
+              data.response_type =
+                "miss";
+
+            }
+
+          }
+
+
+          /* ------------------------------------------------
+             Non-target
+          ------------------------------------------------ */
+
+          else {
+
+
+            if (
+              responseF
+            ) {
+
+
+              data.correct =
+                true;
+
+
+              data.response_type =
+                "correct_rejection";
+
+            }
+
+
+            else if (
+              responseJ
+            ) {
+
+
+              data.correct =
+                false;
+
+
+              data.response_type =
+                "false_alarm";
+
+            }
+
+
+            else {
+
+
+              /*
+                Non-targetへの無反応
+
+                False Alarmとは別に保存
+              */
+
+              data.correct =
+                false;
+
+
+              data.response_type =
+                "no_response";
+
+            }
+
+          }
+
         }
-      }, 1000);
+
+      });
+
     }
-  };
-  timeline.push(break_trial);
+  );
 
-  // =========================
-  // 本試行2 50試行
-  // =========================
-  const main2_start = {
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: `
+
+  return timeline;
+
+}
+
+
+/* =========================================================
+   7. N-back集計
+========================================================= */
+
+
+function calculateNBackResults(
+  blockName = null
+) {
+
+
+  let data =
+
+    jsPsych.data
+      .get()
+      .filter({
+        task:
+          "nback",
+        phase:
+          "main"
+      })
+      .values();
+
+
+  if (
+    blockName !== null
+  ) {
+
+
+    data =
+      data.filter(
+        d =>
+          d.block ===
+          blockName
+      );
+
+  }
+
+
+  /* -------------------------------------------------------
+     最初の2試行を解析から除外
+  ------------------------------------------------------- */
+
+  const valid =
+
+    data.filter(
+      d =>
+        d.valid_nback_trial ===
+        true
+    );
+
+
+  const targets =
+
+    valid.filter(
+      d =>
+        d.is_target ===
+        true
+    );
+
+
+  const nontargets =
+
+    valid.filter(
+      d =>
+        d.is_target ===
+        false
+    );
+
+
+  /* -------------------------------------------------------
+     Counts
+  ------------------------------------------------------- */
+
+  const hit =
+
+    targets.filter(
+      d =>
+        d.response_type ===
+        "hit"
+    ).length;
+
+
+  const miss =
+
+    targets.filter(
+      d =>
+        d.response_type ===
+        "miss"
+    ).length;
+
+
+  const correctRejection =
+
+    nontargets.filter(
+      d =>
+        d.response_type ===
+        "correct_rejection"
+    ).length;
+
+
+  const falseAlarm =
+
+    nontargets.filter(
+      d =>
+        d.response_type ===
+        "false_alarm"
+    ).length;
+
+
+  const noResponse =
+
+    valid.filter(
+      d =>
+        d.no_response ===
+        true
+    ).length;
+
+
+  const nontargetNoResponse =
+
+    nontargets.filter(
+      d =>
+        d.response_type ===
+        "no_response"
+    ).length;
+
+
+  /* -------------------------------------------------------
+     Accuracy
+  ------------------------------------------------------- */
+
+  const correctCount =
+    hit +
+    correctRejection;
+
+
+  const accuracy =
+
+    valid.length > 0
+
+    ?
+
+    correctCount /
+    valid.length
+
+    :
+
+    NaN;
+
+
+  /* -------------------------------------------------------
+     Rates
+  ------------------------------------------------------- */
+
+  const hitRate =
+
+    targets.length > 0
+
+    ?
+
+    hit /
+    targets.length
+
+    :
+
+    NaN;
+
+
+  const missRate =
+
+    targets.length > 0
+
+    ?
+
+    miss /
+    targets.length
+
+    :
+
+    NaN;
+
+
+  const correctRejectionRate =
+
+    nontargets.length > 0
+
+    ?
+
+    correctRejection /
+    nontargets.length
+
+    :
+
+    NaN;
+
+
+  const falseAlarmRate =
+
+    nontargets.length > 0
+
+    ?
+
+    falseAlarm /
+    nontargets.length
+
+    :
+
+    NaN;
+
+
+  /* =======================================================
+     d-prime
+
+     extreme value correction:
+
+     Hit rate = 1
+       → 1 - 0.5/Ntarget
+
+     Hit rate = 0
+       → 0.5/Ntarget
+
+     FA rate = 1
+       → 1 - 0.5/Nnontarget
+
+     FA rate = 0
+       → 0.5/Nnontarget
+  ======================================================= */
+
+
+  let correctedHitRate =
+    hitRate;
+
+
+  let correctedFARate =
+    falseAlarmRate;
+
+
+  if (
+    targets.length > 0
+  ) {
+
+
+    if (
+      correctedHitRate === 1
+    ) {
+
+
+      correctedHitRate =
+
+        1 -
+
+        (
+          0.5 /
+          targets.length
+        );
+
+    }
+
+
+    else if (
+      correctedHitRate === 0
+    ) {
+
+
+      correctedHitRate =
+
+        0.5 /
+        targets.length;
+
+    }
+
+  }
+
+
+  if (
+    nontargets.length > 0
+  ) {
+
+
+    if (
+      correctedFARate === 1
+    ) {
+
+
+      correctedFARate =
+
+        1 -
+
+        (
+          0.5 /
+          nontargets.length
+        );
+
+    }
+
+
+    else if (
+      correctedFARate === 0
+    ) {
+
+
+      correctedFARate =
+
+        0.5 /
+        nontargets.length;
+
+    }
+
+  }
+
+
+  let dprime =
+    NaN;
+
+
+  if (
+
+    Number.isFinite(
+      correctedHitRate
+    )
+
+    &&
+
+    Number.isFinite(
+      correctedFARate
+    )
+
+  ) {
+
+
+    dprime =
+
+      normInv(
+        correctedHitRate
+      )
+
+      -
+
+      normInv(
+        correctedFARate
+      );
+
+  }
+
+
+  /* =======================================================
+     Reaction Time
+  ======================================================= */
+
+
+  /*
+    正答試行
+  */
+
+  const correctRTs =
+
+    valid
+
+      .filter(
+
+        d =>
+          d.correct === true
+          &&
+          d.rt !== null
+
+      )
+
+      .map(
+        d =>
+          d.rt
+      );
+
+
+  /*
+    Hit RT
+  */
+
+  const hitRTs =
+
+    targets
+
+      .filter(
+
+        d =>
+          d.response_type ===
+          "hit"
+          &&
+          d.rt !== null
+
+      )
+
+      .map(
+        d =>
+          d.rt
+      );
+
+
+  /*
+    Correct Rejection RT
+  */
+
+  const correctRejectionRTs =
+
+    nontargets
+
+      .filter(
+
+        d =>
+          d.response_type ===
+          "correct_rejection"
+          &&
+          d.rt !== null
+
+      )
+
+      .map(
+        d =>
+          d.rt
+      );
+
+
+  /* -------------------------------------------------------
+     Results
+  ------------------------------------------------------- */
+
+  return {
+
+
+    total_trials:
+      valid.length,
+
+
+    correct_count:
+      correctCount,
+
+
+    accuracy:
+      accuracy,
+
+
+    target_count:
+      targets.length,
+
+
+    hit_count:
+      hit,
+
+
+    miss_count:
+      miss,
+
+
+    hit_rate:
+      hitRate,
+
+
+    miss_rate:
+      missRate,
+
+
+    nontarget_count:
+      nontargets.length,
+
+
+    correct_rejection_count:
+      correctRejection,
+
+
+    false_alarm_count:
+      falseAlarm,
+
+
+    correct_rejection_rate:
+      correctRejectionRate,
+
+
+    false_alarm_rate:
+      falseAlarmRate,
+
+
+    no_response_count:
+      noResponse,
+
+
+    nontarget_no_response_count:
+      nontargetNoResponse,
+
+
+    corrected_hit_rate:
+      correctedHitRate,
+
+
+    corrected_false_alarm_rate:
+      correctedFARate,
+
+
+    dprime:
+      dprime,
+
+
+    mean_correct_rt:
+      mean(
+        correctRTs
+      ),
+
+
+    median_correct_rt:
+      median(
+        correctRTs
+      ),
+
+
+    mean_hit_rt:
+      mean(
+        hitRTs
+      ),
+
+
+    mean_correct_rejection_rt:
+      mean(
+        correctRejectionRTs
+      ),
+
+
+    sd_correct_rt:
+      standardDeviation(
+        correctRTs
+      ),
+
+
+    sd_hit_rt:
+      standardDeviation(
+        hitRTs
+      ),
+
+
+    sd_correct_rejection_rt:
+      standardDeviation(
+        correctRejectionRTs
+      )
+
+  };
+
+}
+
+
+/* =========================================================
+   8. 表示関数
+========================================================= */
+
+
+function format(
+  value,
+  digits = 1
+) {
+
+
+  if (
+    !Number.isFinite(
+      value
+    )
+  ) {
+
+    return "";
+
+  }
+
+
+  return Number(
+    value
+  ).toFixed(
+    digits
+  );
+
+}
+
+
+/* =========================================================
+   9. jsPsych初期化
+========================================================= */
+
+
+const jsPsych =
+  initJsPsych({
+
+
+    on_finish:
+    function() {
+
+
+      const block1 =
+
+        calculateNBackResults(
+          "main1"
+        );
+
+
+      const block2 =
+
+        calculateNBackResults(
+          "main2"
+        );
+
+
+      const overall =
+
+        calculateNBackResults();
+
+
+      /* ===================================================
+         CSV
+      =================================================== */
+
+
+      let csv = "";
+
+
+      /* ---------------------------------------------------
+         基本情報
+      --------------------------------------------------- */
+
+      csv +=
+        "===== 基本情報 =====\n";
+
+
+      csv +=
+        "被験者ID," +
+        participant_id +
+        "\n";
+
+
+      csv +=
+        "課題,2-back\n";
+
+
+      csv +=
+        "刺激提示時間(ms)," +
+        STIMULUS_DURATION +
+        "\n";
+
+
+      csv +=
+        "1試行時間(ms)," +
+        TRIAL_DURATION +
+        "\n";
+
+
+      csv +=
+        "本試行1試行数," +
+        MAIN_TRIALS_PER_BLOCK +
+        "\n";
+
+
+      csv +=
+        "本試行2試行数," +
+        MAIN_TRIALS_PER_BLOCK +
+        "\n";
+
+
+      csv +=
+        "各Block Target数," +
+        MAIN_TARGETS_PER_BLOCK +
+        "\n";
+
+
+      csv +=
+        "実施日時," +
+        new Date()
+          .toLocaleString(
+            "ja-JP"
+          )
+        +
+        "\n";
+
+
+      /* ---------------------------------------------------
+         Raw data
+      --------------------------------------------------- */
+
+      csv +=
+        "\n===== Trial level data =====\n";
+
+
+      csv +=
+        "被験者ID,phase,block,trial_number,stimulus,valid_nback_trial,is_target,correct_response,response,response_type,correct,no_response,rt_ms\n";
+
+
+      const rawData =
+
+        jsPsych.data
+          .get()
+          .filter({
+            task:
+              "nback"
+          })
+          .values();
+
+
+      rawData.forEach(
+        d => {
+
+
+          csv += [
+
+            participant_id,
+
+            d.phase,
+
+            d.block,
+
+            d.trial_number,
+
+            d.stimulus,
+
+            d.valid_nback_trial,
+
+            d.is_target,
+
+            d.correct_response ?? "",
+
+            d.response ?? "",
+
+            d.response_type ?? "",
+
+            d.correct ?? "",
+
+            d.no_response ?? "",
+
+            d.rt ?? ""
+
+          ].join(",")
+          +
+          "\n";
+
+        }
+      );
+
+
+      /* ===================================================
+         Summary追加
+      =================================================== */
+
+
+      function addSummary(
+        label,
+        r
+      ) {
+
+
+        csv +=
+          "\n===== " +
+          label +
+          " =====\n";
+
+
+        csv +=
+          "総試行数," +
+          r.total_trials +
+          "\n";
+
+
+        csv +=
+          "正答数," +
+          r.correct_count +
+          "\n";
+
+
+        csv +=
+          "正答率(%)," +
+          format(
+            r.accuracy * 100,
+            1
+          )
+          +
+          "\n";
+
+
+        csv +=
+          "Target数," +
+          r.target_count +
+          "\n";
+
+
+        csv +=
+          "Hit数," +
+          r.hit_count +
+          "\n";
+
+
+        csv +=
+          "Miss数," +
+          r.miss_count +
+          "\n";
+
+
+        csv +=
+          "Hit rate(%)," +
+          format(
+            r.hit_rate * 100,
+            1
+          )
+          +
+          "\n";
+
+
+        csv +=
+          "Miss rate(%)," +
+          format(
+            r.miss_rate * 100,
+            1
+          )
+          +
+          "\n";
+
+
+        csv +=
+          "Non-target数," +
+          r.nontarget_count +
+          "\n";
+
+
+        csv +=
+          "Correct Rejection数," +
+          r.correct_rejection_count +
+          "\n";
+
+
+        csv +=
+          "False Alarm数," +
+          r.false_alarm_count +
+          "\n";
+
+
+        csv +=
+          "Correct Rejection rate(%)," +
+          format(
+            r.correct_rejection_rate * 100,
+            1
+          )
+          +
+          "\n";
+
+
+        csv +=
+          "False Alarm rate(%)," +
+          format(
+            r.false_alarm_rate * 100,
+            1
+          )
+          +
+          "\n";
+
+
+        csv +=
+          "無反応数," +
+          r.no_response_count +
+          "\n";
+
+
+        csv +=
+          "d-prime," +
+          format(
+            r.dprime,
+            3
+          )
+          +
+          "\n";
+
+
+        csv +=
+          "正答時平均RT(ms)," +
+          format(
+            r.mean_correct_rt,
+            1
+          )
+          +
+          "\n";
+
+
+        csv +=
+          "正答時中央値RT(ms)," +
+          format(
+            r.median_correct_rt,
+            1
+          )
+          +
+          "\n";
+
+
+        csv +=
+          "Hit平均RT(ms)," +
+          format(
+            r.mean_hit_rt,
+            1
+          )
+          +
+          "\n";
+
+
+        csv +=
+          "Correct Rejection平均RT(ms)," +
+          format(
+            r.mean_correct_rejection_rt,
+            1
+          )
+          +
+          "\n";
+
+
+        csv +=
+          "RT標準偏差(ms)," +
+          format(
+            r.sd_correct_rt,
+            1
+          )
+          +
+          "\n";
+
+
+        /*
+          削除する必要はないので
+          trial-type別SDもCSVには保存
+        */
+
+        csv +=
+          "Hit RT標準偏差(ms)," +
+          format(
+            r.sd_hit_rt,
+            1
+          )
+          +
+          "\n";
+
+
+        csv +=
+          "Correct Rejection RT標準偏差(ms)," +
+          format(
+            r.sd_correct_rejection_rt,
+            1
+          )
+          +
+          "\n";
+
+
+        /*
+          d′計算に使用した補正値も保存
+        */
+
+        csv +=
+          "d-prime補正後Hit rate," +
+          format(
+            r.corrected_hit_rate,
+            4
+          )
+          +
+          "\n";
+
+
+        csv +=
+          "d-prime補正後False Alarm rate," +
+          format(
+            r.corrected_false_alarm_rate,
+            4
+          )
+          +
+          "\n";
+
+      }
+
+
+      addSummary(
+        "本試行1",
+        block1
+      );
+
+
+      addSummary(
+        "本試行2",
+        block2
+      );
+
+
+      addSummary(
+        "本試行全体",
+        overall
+      );
+
+
+      /* ===================================================
+         CSV保存
+      =================================================== */
+
+
+      const bom =
+
+        new Uint8Array([
+          0xEF,
+          0xBB,
+          0xBF
+        ]);
+
+
+      const blob =
+
+        new Blob(
+
+          [
+            bom,
+            csv
+          ],
+
+          {
+            type:
+              "text/csv;charset=utf-8;"
+          }
+
+        );
+
+
+      const url =
+
+        URL.createObjectURL(
+          blob
+        );
+
+
+      const link =
+
+        document.createElement(
+          "a"
+        );
+
+
+      link.href =
+        url;
+
+
+      link.download =
+
+        "nback_" +
+
+        participant_id +
+
+        "_" +
+
+        new Date()
+          .toISOString()
+          .slice(
+            0,
+            10
+          )
+
+        +
+
+        ".csv";
+
+
+      document.body
+        .appendChild(
+          link
+        );
+
+
+      link.click();
+
+
+      document.body
+        .removeChild(
+          link
+        );
+
+
+      URL.revokeObjectURL(
+        url
+      );
+
+    }
+
+  });
+
+
+
+/* =========================================================
+   10. Timeline
+========================================================= */
+
+
+const timeline =
+  [];
+
+
+/* =========================================================
+   11. 被験者ID入力
+========================================================= */
+
+
+timeline.push({
+
+
+  type:
+    jsPsychSurveyText,
+
+
+  questions: [
+
+    {
+
+      prompt:
+        "被験者IDを入力してください",
+
+      name:
+        "ID",
+
+      required:
+        true
+
+    }
+
+  ],
+
+
+  button_label:
+    "開始",
+
+
+  on_finish:
+  function(data) {
+
+
+    participant_id =
+
+      data.response.ID
+        .trim();
+
+  }
+
+});
+
+
+/* =========================================================
+   12. 説明
+========================================================= */
+
+
+timeline.push({
+
+
+  type:
+    jsPsychHtmlKeyboardResponse,
+
+
+  stimulus: `
+
+    <div class="text">
+
+      <h2>
+        2-back課題
+      </h2>
+
+
+      <p>
+        画面中央に
+        アルファベットが
+        1文字ずつ表示されます。
+      </p>
+
+
+      <p>
+        現在表示されている文字が、
+        <strong>
+          2つ前に表示された文字と
+          同じかどうか
+        </strong>
+        を判断してください。
+      </p>
+
+
+      <p>
+        <strong>
+          2つ前と同じ：
+        </strong>
+
+        Jキー
+      </p>
+
+
+      <p>
+        <strong>
+          2つ前と違う：
+        </strong>
+
+        Fキー
+      </p>
+
+
+      <p>
+        文字が消えた後でも
+        次の文字が表示されるまでは
+        回答できます。
+      </p>
+
+
+      <p>
+        できるだけ速く、
+        正確に回答してください。
+      </p>
+
+
+      <p>
+        最初の2文字は
+        比較する文字がまだないため、
+        キーを押さずに見てください。
+      </p>
+
+
+      <p>
+        まず20試行
+        練習します。
+      </p>
+
+
+      <p>
+        準備ができたら
+        スペースキーを
+        押してください。
+      </p>
+
+    </div>
+
+  `,
+
+
+  choices:
+    [" "]
+
+});
+
+
+/* =========================================================
+   13. 練習開始
+========================================================= */
+
+
+timeline.push({
+
+
+  type:
+    jsPsychHtmlKeyboardResponse,
+
+
+  stimulus: `
+
+    <div class="text">
+
+      <h2>
+        練習試行
+      </h2>
+
+
+      <p>
+        これから20試行
+        練習します。
+      </p>
+
+
+      <p>
+        2つ前と同じ：
+        <strong>Jキー</strong>
+      </p>
+
+
+      <p>
+        2つ前と違う：
+        <strong>Fキー</strong>
+      </p>
+
+
+      <p>
+        スペースキーを押すと
+        始まります。
+      </p>
+
+    </div>
+
+  `,
+
+
+  choices:
+    [" "]
+
+});
+
+
+/* =========================================================
+   14. 練習20試行
+========================================================= */
+
+
+const practiceTrials =
+
+  generateNBackTrials(
+
+    PRACTICE_TRIALS,
+
+    "practice",
+
+    PRACTICE_TARGETS
+
+  );
+
+
+timeline.push(
+
+  ...createNBackBlock(
+    practiceTrials
+  )
+
+);
+
+
+/* =========================================================
+   15. 練習結果
+========================================================= */
+
+
+timeline.push({
+
+
+  type:
+    jsPsychHtmlKeyboardResponse,
+
+
+  stimulus:
+  function() {
+
+
+    const practiceData =
+
+      jsPsych.data
+        .get()
+        .filter({
+          task:
+            "nback",
+          phase:
+            "practice"
+        })
+        .values()
+        .filter(
+          d =>
+            d.valid_nback_trial ===
+            true
+        );
+
+
+    const correct =
+
+      practiceData.filter(
+        d =>
+          d.correct ===
+          true
+      ).length;
+
+
+    const accuracy =
+
+      practiceData.length > 0
+
+      ?
+
+      100 *
+      correct /
+      practiceData.length
+
+      :
+
+      0;
+
+
+    return `
+
       <div class="text">
-        <h2>本試行2</h2>
-        <p>これから本試行2を行います。</p>
-        <p>50試行です。</p>
-        <p>スペースキーを押すと始まります。</p>
+
+        <h2>
+          練習終了
+        </h2>
+
+
+        <p>
+          練習の正答数：
+          ${correct}
+          /
+          ${practiceData.length}
+        </p>
+
+
+        <p>
+          練習の正答率：
+          ${format(
+            accuracy,
+            1
+          )}%
+        </p>
+
+
+        <p>
+          ここから本試行を
+          開始します。
+        </p>
+
+
+        <p>
+          本試行は
+          50試行を2回行います。
+        </p>
+
+
+        <p>
+          1回目と2回目の間には
+          60秒間の休憩があります。
+        </p>
+
+
+        <p>
+          スペースキーを押してください。
+        </p>
+
       </div>
-    `,
-    choices: [" "]
-  };
-  timeline.push(main2_start);
 
-  const main2_trials = generateNBackTrials(50, "main2");
-  timeline.push(...createNBackBlock(main2_trials));
+    `;
 
-  // =========================
-  // 結果表示
-  // =========================
-  const result_display = {
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: function() {
-      const main_data = jsPsych.data.get().filterCustom(function(trial) {
-        return trial.block === "main1" || trial.block === "main2";
-      });
+  },
 
-      const total = main_data.count();
-      const correct = main_data.filter({correct: true}).count();
-      const accuracy = Math.round((correct / total) * 100);
 
-      const target_trials = main_data.filter({is_target: true});
-      const nontarget_trials = main_data.filter({is_target: false});
+  choices:
+    [" "]
 
-      const hit = target_trials.filter({correct: true}).count();
-      const miss = target_trials.filter({correct: false}).count();
-      const correct_rejection = nontarget_trials.filter({correct: true}).count();
-      const false_alarm = nontarget_trials.filter({correct: false}).count();
+});
 
-      const rt_data = main_data.filterCustom(function(trial) {
-        return trial.correct === true && trial.rt !== null;
-      });
 
-      const mean_rt = Math.round(rt_data.select("rt").mean());
+/* =========================================================
+   16. 本試行1開始
+========================================================= */
 
-      return `
-        <div class="text">
-          <h2>結果</h2>
-          <p>本試行の正答数：${correct} / ${total}</p>
-          <p>正答率：${accuracy}%</p>
-          <p>Hit数（ターゲットを正しく検出）：${hit}</p>
-          <p>Miss数（ターゲットを見逃し回数）：${miss}</p>
-          <p>False Alarm数（違う刺激を一致と判断）：${false_alarm}</p>
-          <p>Correct Rejection数（違う刺激を正しく不一致と判断）：${correct_rejection}</p>
-          <p>正答時の平均反応時間：${mean_rt} ms</p>
 
-          <p>スペースキーを押すとCSVファイルが保存され、課題が終了します。</p>
-        </div>
-      `;
-    },
-    choices: [" "]
-  };
-  timeline.push(result_display);
+timeline.push({
 
-  // =========================
-  // 実行
-  // =========================
-  jsPsych.run(timeline);
+
+  type:
+    jsPsychHtmlKeyboardResponse,
+
+
+  stimulus: `
+
+    <div class="text">
+
+      <h2>
+        本試行1
+      </h2>
+
+
+      <p>
+        50試行行います。
+      </p>
+
+
+      <p>
+        2つ前と同じ：
+        <strong>Jキー</strong>
+      </p>
+
+
+      <p>
+        2つ前と違う：
+        <strong>Fキー</strong>
+      </p>
+
+
+      <p>
+        できるだけ速く、
+        正確に回答してください。
+      </p>
+
+
+      <p>
+        スペースキーを押すと
+        始まります。
+      </p>
+
+    </div>
+
+  `,
+
+
+  choices:
+    [" "]
+
+});
+
+
+/* =========================================================
+   17. 本試行1
+========================================================= */
+
+
+const main1Trials =
+
+  generateNBackTrials(
+
+    MAIN_TRIALS_PER_BLOCK,
+
+    "main1",
+
+    MAIN_TARGETS_PER_BLOCK
+
+  );
+
+
+timeline.push(
+
+  ...createNBackBlock(
+    main1Trials
+  )
+
+);
+
+
+/* =========================================================
+   18. 60秒休憩
+========================================================= */
+
+
+timeline.push({
+
+
+  type:
+    jsPsychHtmlKeyboardResponse,
+
+
+  stimulus: `
+
+    <div class="text">
+
+      <h2>
+        休憩
+      </h2>
+
+
+      <p>
+        本試行1が終了しました。
+      </p>
+
+
+      <p>
+        60秒間
+        休憩してください。
+      </p>
+
+
+      <div
+        id="countdown"
+        class="countdown"
+      >
+        60
+      </div>
+
+
+      <p>
+        秒
+      </p>
+
+
+      <p>
+        0秒になると
+        自動的に次へ進みます。
+      </p>
+
+    </div>
+
+  `,
+
+
+  choices:
+    "NO_KEYS",
+
+
+  trial_duration:
+    BREAK_DURATION,
+
+
+  on_load:
+  function() {
+
+
+    let remaining =
+      60;
+
+
+    const timer =
+
+      setInterval(
+        function() {
+
+
+          remaining -=
+            1;
+
+
+          const element =
+
+            document.getElementById(
+              "countdown"
+            );
+
+
+          if (
+            element
+          ) {
+
+
+            element.textContent =
+
+              Math.max(
+                remaining,
+                0
+              );
+
+          }
+
+
+          if (
+            remaining <= 0
+          ) {
+
+
+            clearInterval(
+              timer
+            );
+
+          }
+
+        },
+
+        1000
+
+      );
+
+  }
+
+});
+
+
+/* =========================================================
+   19. 本試行2開始
+========================================================= */
+
+
+timeline.push({
+
+
+  type:
+    jsPsychHtmlKeyboardResponse,
+
+
+  stimulus: `
+
+    <div class="text">
+
+      <h2>
+        本試行2
+      </h2>
+
+
+      <p>
+        これから
+        2回目の50試行を
+        行います。
+      </p>
+
+
+      <p>
+        2つ前と同じ：
+        <strong>Jキー</strong>
+      </p>
+
+
+      <p>
+        2つ前と違う：
+        <strong>Fキー</strong>
+      </p>
+
+
+      <p>
+        スペースキーを押すと
+        始まります。
+      </p>
+
+    </div>
+
+  `,
+
+
+  choices:
+    [" "]
+
+});
+
+
+/* =========================================================
+   20. 本試行2
+========================================================= */
+
+
+const main2Trials =
+
+  generateNBackTrials(
+
+    MAIN_TRIALS_PER_BLOCK,
+
+    "main2",
+
+    MAIN_TARGETS_PER_BLOCK
+
+  );
+
+
+timeline.push(
+
+  ...createNBackBlock(
+    main2Trials
+  )
+
+);
+
+
+/* =========================================================
+   21. 最終結果表示
+========================================================= */
+
+
+timeline.push({
+
+
+  type:
+    jsPsychHtmlKeyboardResponse,
+
+
+  stimulus:
+  function() {
+
+
+    const r =
+      calculateNBackResults();
+
+
+    return `
+
+      <div class="text">
+
+        <h2>
+          【2-back課題 結果】
+        </h2>
+
+
+        <table class="result-table">
+
+
+          <tr>
+            <td>総試行数</td>
+            <td>
+              ${r.total_trials}
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>正答数</td>
+            <td>
+              ${r.correct_count}
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>正答率</td>
+            <td>
+              ${format(
+                r.accuracy * 100,
+                1
+              )}%
+            </td>
+          </tr>
+
+
+          <tr>
+            <td colspan="2">
+              <strong>
+                Target
+              </strong>
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>Target数</td>
+            <td>
+              ${r.target_count}
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>Hit数</td>
+            <td>
+              ${r.hit_count}
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>Miss数</td>
+            <td>
+              ${r.miss_count}
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>Hit rate</td>
+            <td>
+              ${format(
+                r.hit_rate * 100,
+                1
+              )}%
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>Miss rate</td>
+            <td>
+              ${format(
+                r.miss_rate * 100,
+                1
+              )}%
+            </td>
+          </tr>
+
+
+          <tr>
+            <td colspan="2">
+              <strong>
+                Non-target
+              </strong>
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>Non-target数</td>
+            <td>
+              ${r.nontarget_count}
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>Correct Rejection数</td>
+            <td>
+              ${r.correct_rejection_count}
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>False Alarm数</td>
+            <td>
+              ${r.false_alarm_count}
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>Correct Rejection rate</td>
+            <td>
+              ${format(
+                r.correct_rejection_rate * 100,
+                1
+              )}%
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>False Alarm rate</td>
+            <td>
+              ${format(
+                r.false_alarm_rate * 100,
+                1
+              )}%
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>d-prime（d′）</td>
+            <td>
+              ${format(
+                r.dprime,
+                3
+              )}
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>正答時平均RT</td>
+            <td>
+              ${format(
+                r.mean_correct_rt,
+                1
+              )}
+              ms
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>Hit平均RT</td>
+            <td>
+              ${format(
+                r.mean_hit_rt,
+                1
+              )}
+              ms
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>
+              Correct Rejection平均RT
+            </td>
+
+            <td>
+              ${format(
+                r.mean_correct_rejection_rt,
+                1
+              )}
+              ms
+            </td>
+          </tr>
+
+
+          <tr>
+            <td>RT標準偏差</td>
+            <td>
+              ${format(
+                r.sd_correct_rt,
+                1
+              )}
+              ms
+            </td>
+          </tr>
+
+
+        </table>
+
+
+        <p>
+          スペースキーを押すと
+          CSVファイルを保存して
+          課題を終了します。
+        </p>
+
+      </div>
+
+    `;
+
+  },
+
+
+  choices:
+    [" "]
+
+});
+
+
+/* =========================================================
+   22. 実行
+========================================================= */
+
+
+jsPsych.run(
+  timeline
+);
+
+
 </script>
+
 </html>
