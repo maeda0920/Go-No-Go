@@ -4,637 +4,1245 @@
   <meta charset="utf-8">
   <title>Go No-Go Test</title>
 
- <script src="https://unpkg.com/jspsych@8.2.2"></script>
+  <script src="https://unpkg.com/jspsych@8.2.2"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0"></script>
 
-<script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
-
-<script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0"></script>
-
-<link href="https://unpkg.com/jspsych@8.2.2/css/jspsych.css" rel="stylesheet">
+  <link href="https://unpkg.com/jspsych@8.2.2/css/jspsych.css" rel="stylesheet">
 </head>
 
 <body></body>
 
 <script>
+
+/* =========================================================
+   jsPsych 初期化
+========================================================= */
+
 const jsPsych = initJsPsych({
 
   on_finish: function() {
 
-    let data = jsPsych.data.get()
-      .filter({task:"go_nogo"})
+    /* -----------------------------------------------------
+       本試行のみ取得
+       練習試行は解析対象から除外
+    ----------------------------------------------------- */
+
+    const all_data = jsPsych.data.get()
+      .filter({task: "go_nogo"})
       .values();
 
-    let go_data = data.filter(d => d.stimulus_type === "go");
-let nogo_data = data.filter(d => d.stimulus_type === "nogo");
+    const main_data = all_data.filter(
+      d => d.mode === "main"
+    );
 
-let go_rt = go_data
- .filter(d => d.rt !== null && d.rt >= 150 && d.rt <= 1000)
-  .map(d => d.rt);
+    const block1_data = main_data.filter(
+      d => d.block === 1
+    );
 
-if (go_rt.length === 0) {
-  go_rt = [NaN];
-}
+    const block2_data = main_data.filter(
+      d => d.block === 2
+    );
 
-let mean_rt =
-  go_rt.reduce((a,b)=>a+b,0) / go_rt.length;
 
-let sd_rt =
-  Math.sqrt(
-    go_rt.reduce(
-      (sum,x)=>sum + Math.pow(x-mean_rt,2),
-      0
-    ) / (go_rt.length-1)
-  );
+    /* =====================================================
+       集計関数
+    ===================================================== */
 
-let sorted_rt =
-  [...go_rt].sort((a,b)=>a-b);
+    function calculateSummary(data) {
 
-let median_rt;
+      const go_data =
+        data.filter(d => d.stimulus_type === "go");
 
-if (sorted_rt.length % 2 === 0) {
-  median_rt =
-    (
-      sorted_rt[sorted_rt.length/2 - 1] +
-      sorted_rt[sorted_rt.length/2]
-    ) / 2;
-} else {
-  median_rt =
-    sorted_rt[Math.floor(sorted_rt.length/2)];
-}
+      const nogo_data =
+        data.filter(d => d.stimulus_type === "nogo");
 
-let min_rt = Math.min(...go_rt);
-let max_rt = Math.max(...go_rt);
-let n_trials = go_rt.length;
 
-let se_rt = sd_rt / Math.sqrt(go_rt.length);
-let cv_rt = sd_rt / mean_rt;
+      /* ---------------------------------------------------
+         Go反応時間
+         150～1000 msのみを有効RTとする
+      --------------------------------------------------- */
 
-let go_accuracy =
-  100 * (
-    go_data.filter(d => d.correct === true).length /
-    go_data.length
-  );
+      const all_go_responses =
+        go_data.filter(d => d.rt !== null);
 
-let nogo_accuracy =
-  100 * (
-    nogo_data.filter(d => d.correct === true).length /
-    nogo_data.length
-  );
+      const valid_go_rt =
+        all_go_responses
+          .filter(d => d.rt >= 150 && d.rt <= 1000)
+          .map(d => d.rt);
 
-let commission_rate = 100 - nogo_accuracy;
-let omission_rate = 100 - go_accuracy;
+      const excluded_rt_count =
+        all_go_responses.length - valid_go_rt.length;
 
-function z(p){
-  let a1=-39.6968302866538;
-  let a2=220.946098424521;
-  let a3=-275.928510446969;
-  let a4=138.357751867269;
-  let a5=-30.6647980661472;
-  let a6=2.50662827745924;
 
-  let b1=-54.4760987982241;
-  let b2=161.585836858041;
-  let b3=-155.698979859887;
-  let b4=66.8013118877197;
-  let b5=-13.2806815528857;
+      /* ---------------------------------------------------
+         RT統計量
+      --------------------------------------------------- */
 
-  let q = p - 0.5;
-  let r = q*q;
+      let mean_rt = NaN;
+      let median_rt = NaN;
+      let min_rt = NaN;
+      let max_rt = NaN;
+      let sd_rt = NaN;
+      let se_rt = NaN;
+      let cv_rt = NaN;
 
-  return q *
-  (
-    (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6)
-    /
-    (((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1)
-  );
-}
+      const n_valid_rt = valid_go_rt.length;
 
-let hit_rate = go_accuracy / 100;
-let fa_rate = commission_rate / 100;
+      if (n_valid_rt > 0) {
 
-hit_rate = Math.min(Math.max(hit_rate,0.01),0.99);
-fa_rate = Math.min(Math.max(fa_rate,0.01),0.99);
+        mean_rt =
+          valid_go_rt.reduce((a,b) => a+b,0)
+          / n_valid_rt;
 
-let dprime = z(hit_rate) - z(fa_rate);
+        const sorted_rt =
+          [...valid_go_rt].sort((a,b) => a-b);
 
-let beta =
-  Math.exp(
-    (
-      Math.pow(z(fa_rate),2) -
-      Math.pow(z(hit_rate),2)
-    ) / 2
-  );
+        if (sorted_rt.length % 2 === 0) {
+
+          median_rt =
+            (
+              sorted_rt[sorted_rt.length/2 - 1]
+              +
+              sorted_rt[sorted_rt.length/2]
+            ) / 2;
+
+        } else {
+
+          median_rt =
+            sorted_rt[
+              Math.floor(sorted_rt.length/2)
+            ];
+        }
+
+        min_rt = Math.min(...valid_go_rt);
+        max_rt = Math.max(...valid_go_rt);
+
+
+        if (n_valid_rt > 1) {
+
+          sd_rt =
+            Math.sqrt(
+              valid_go_rt.reduce(
+                (sum,x) =>
+                  sum + Math.pow(x-mean_rt,2),
+                0
+              )
+              /
+              (n_valid_rt-1)
+            );
+
+          se_rt =
+            sd_rt / Math.sqrt(n_valid_rt);
+
+          cv_rt =
+            sd_rt / mean_rt;
+        }
+      }
+
+
+      /* ---------------------------------------------------
+         正答・エラー
+      --------------------------------------------------- */
+
+      const go_correct_count =
+        go_data.filter(
+          d => d.correct === true
+        ).length;
+
+      const nogo_correct_count =
+        nogo_data.filter(
+          d => d.correct === true
+        ).length;
+
+      const omission_count =
+        go_data.filter(
+          d => d.error_type === "omission"
+        ).length;
+
+      const commission_count =
+        nogo_data.filter(
+          d => d.error_type === "commission"
+        ).length;
+
+
+      const go_accuracy =
+        go_data.length > 0
+        ? 100 * go_correct_count / go_data.length
+        : NaN;
+
+      const nogo_accuracy =
+        nogo_data.length > 0
+        ? 100 * nogo_correct_count / nogo_data.length
+        : NaN;
+
+      const omission_rate =
+        go_data.length > 0
+        ? 100 * omission_count / go_data.length
+        : NaN;
+
+      const commission_rate =
+        nogo_data.length > 0
+        ? 100 * commission_count / nogo_data.length
+        : NaN;
+
+
+      /* ---------------------------------------------------
+         Overall accuracy
+      --------------------------------------------------- */
+
+      const total_trials = data.length;
+
+      const total_correct =
+        data.filter(
+          d => d.correct === true
+        ).length;
+
+      const overall_accuracy =
+        total_trials > 0
+        ? 100 * total_correct / total_trials
+        : NaN;
+
+
+      /* ---------------------------------------------------
+         Signal Detection Theory
+
+         Hit:
+         Go刺激に正しく反応
+
+         False Alarm:
+         No-Go刺激に誤反応
+
+         極端値には half-trial correction を使用
+      --------------------------------------------------- */
+
+      let hit_rate =
+        go_data.length > 0
+        ? go_correct_count / go_data.length
+        : NaN;
+
+      let fa_rate =
+        nogo_data.length > 0
+        ? commission_count / nogo_data.length
+        : NaN;
+
+
+      if (go_data.length > 0) {
+
+        if (hit_rate === 1) {
+          hit_rate =
+            1 - (0.5 / go_data.length);
+        }
+
+        if (hit_rate === 0) {
+          hit_rate =
+            0.5 / go_data.length;
+        }
+      }
+
+
+      if (nogo_data.length > 0) {
+
+        if (fa_rate === 1) {
+          fa_rate =
+            1 - (0.5 / nogo_data.length);
+        }
+
+        if (fa_rate === 0) {
+          fa_rate =
+            0.5 / nogo_data.length;
+        }
+      }
+
+
+      /* ---------------------------------------------------
+         inverse normal CDF
+      --------------------------------------------------- */
+
+      function normInv(p) {
+
+        const a1=-39.6968302866538;
+        const a2=220.946098424521;
+        const a3=-275.928510446969;
+        const a4=138.357751867269;
+        const a5=-30.6647980661472;
+        const a6=2.50662827745924;
+
+        const b1=-54.4760987982241;
+        const b2=161.585836858041;
+        const b3=-155.698979859887;
+        const b4=66.8013118877197;
+        const b5=-13.2806815528857;
+
+        const q = p - 0.5;
+        const r = q*q;
+
+        return q *
+        (
+          (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6)
+          /
+          (((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1)
+        );
+      }
+
+
+      let dprime = NaN;
+      let beta = NaN;
+
+      if (
+        !Number.isNaN(hit_rate) &&
+        !Number.isNaN(fa_rate)
+      ) {
+
+        const zHit = normInv(hit_rate);
+        const zFA  = normInv(fa_rate);
+
+        dprime =
+          zHit - zFA;
+
+        beta =
+          Math.exp(
+            (
+              Math.pow(zFA,2)
+              -
+              Math.pow(zHit,2)
+            ) / 2
+          );
+      }
+
+
+      /* ---------------------------------------------------
+         結果返却
+      --------------------------------------------------- */
+
+      return {
+
+        total_trials: total_trials,
+
+        go_trials: go_data.length,
+        nogo_trials: nogo_data.length,
+
+        valid_rt_count: n_valid_rt,
+        excluded_rt_count: excluded_rt_count,
+
+        mean_rt: mean_rt,
+        median_rt: median_rt,
+        min_rt: min_rt,
+        max_rt: max_rt,
+
+        sd_rt: sd_rt,
+        se_rt: se_rt,
+        cv_rt: cv_rt,
+
+        go_correct_count: go_correct_count,
+        nogo_correct_count: nogo_correct_count,
+
+        omission_count: omission_count,
+        commission_count: commission_count,
+
+        go_accuracy: go_accuracy,
+        nogo_accuracy: nogo_accuracy,
+
+        omission_rate: omission_rate,
+        commission_rate: commission_rate,
+
+        overall_accuracy: overall_accuracy,
+
+        hit_rate: hit_rate,
+        fa_rate: fa_rate,
+
+        dprime: dprime,
+        beta: beta
+      };
+    }
+
+
+    /* =====================================================
+       Block別・全体集計
+    ===================================================== */
+
+    const summary_block1 =
+      calculateSummary(block1_data);
+
+    const summary_block2 =
+      calculateSummary(block2_data);
+
+    const summary_total =
+      calculateSummary(main_data);
+
+
+    /* =====================================================
+       CSV作成
+    ===================================================== */
+
+    function csvEscape(value) {
+
+      if (
+        value === null ||
+        value === undefined
+      ) {
+        return "";
+      }
+
+      const str = String(value);
+
+      if (
+        str.includes(",") ||
+        str.includes('"') ||
+        str.includes("\n")
+      ) {
+
+        return '"' +
+          str.replace(/"/g,'""') +
+          '"';
+      }
+
+      return str;
+    }
+
 
     let csv =
-      "被験者ID,ブロック,試行番号,刺激種類,刺激色,反応時間(ms),正誤,エラー種類\n";
+      "被験者ID,モード,ブロック,試行番号,刺激種類,刺激色,反応時間(ms),正誤,エラー種類\n";
 
-    data.forEach(function(d, i){
+
+    /* -----------------------------------------------------
+       Raw data
+       練習を含め全試行を保存
+    ----------------------------------------------------- */
+
+    all_data.forEach(function(d, i) {
 
       csv +=
-
-participant_id + "," +
-
-(i+1) + "," +
-
-d.stimulus_type + "," +
-
-d.color + "," +
-
-(d.rt ?? "") + "," +
-
-d.correct + "," +
-
-d.error_type +
-
-"\n";
-
+        [
+          participant_id,
+          d.mode,
+          d.block ?? "",
+          i+1,
+          d.stimulus_type,
+          d.color,
+          d.rt ?? "",
+          d.correct,
+          d.error_type
+        ]
+        .map(csvEscape)
+        .join(",")
+        +
+        "\n";
     });
 
-csv += "\n";
-csv += "===== 集計結果 =====\n";
 
-csv += "平均RT," + mean_rt.toFixed(1) + "\n";
-csv += "中央値RT," + median_rt.toFixed(1) + "\n";
-csv += "最小RT," + min_rt.toFixed(1) + "\n";
-csv += "最大RT," + max_rt.toFixed(1) + "\n";
-csv += "有効試行数," + n_trials + "\n";
+    /* =====================================================
+       集計結果出力関数
+    ===================================================== */
 
-csv += "RT標準偏差," + sd_rt.toFixed(1) + "\n";
-csv += "RT標準誤差," + se_rt.toFixed(1) + "\n";
-csv += "CV," + cv_rt.toFixed(3) + "\n";
+    function appendSummary(label, s) {
 
-csv += "Go正答率," + go_accuracy.toFixed(1) + "\n";
-csv += "No-Go正答率," + nogo_accuracy.toFixed(1) + "\n";
+      function f1(x) {
+        return Number.isFinite(x)
+          ? x.toFixed(1)
+          : "";
+      }
 
-csv += "Commission Error率," + commission_rate.toFixed(1) + "\n";
-csv += "Omission Error率," + omission_rate.toFixed(1) + "\n";
+      function f3(x) {
+        return Number.isFinite(x)
+          ? x.toFixed(3)
+          : "";
+      }
 
-csv += "d-prime," + dprime.toFixed(2) + "\n";
-csv += "Beta," + beta.toFixed(2) + "\n";
-    
-    let bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      function f2(x) {
+        return Number.isFinite(x)
+          ? x.toFixed(2)
+          : "";
+      }
 
-let blob = new Blob(
-  [bom, csv],
-  {type:"text/csv;charset=utf-8;"}
-);
 
-    let link = document.createElement("a");
+      csv += "\n";
+      csv += "===== " + label + " =====\n";
 
-    link.href = URL.createObjectURL(blob);
+      csv +=
+        "総試行数," +
+        s.total_trials + "\n";
 
-   link.download =
-participant_id +
-"_GoNoGo結果.csv";
+      csv +=
+        "Go試行数," +
+        s.go_trials + "\n";
+
+      csv +=
+        "No-Go試行数," +
+        s.nogo_trials + "\n";
+
+
+      csv +=
+        "有効Go RT数," +
+        s.valid_rt_count + "\n";
+
+      csv +=
+        "除外RT数," +
+        s.excluded_rt_count + "\n";
+
+
+      csv +=
+        "平均RT(ms)," +
+        f1(s.mean_rt) + "\n";
+
+      csv +=
+        "中央値RT(ms)," +
+        f1(s.median_rt) + "\n";
+
+      csv +=
+        "最小RT(ms)," +
+        f1(s.min_rt) + "\n";
+
+      csv +=
+        "最大RT(ms)," +
+        f1(s.max_rt) + "\n";
+
+
+      csv +=
+        "RT標準偏差(ms)," +
+        f1(s.sd_rt) + "\n";
+
+      csv +=
+        "RT標準誤差(ms)," +
+        f1(s.se_rt) + "\n";
+
+      csv +=
+        "RT CV," +
+        f3(s.cv_rt) + "\n";
+
+
+      csv +=
+        "Go正答数," +
+        s.go_correct_count + "\n";
+
+      csv +=
+        "No-Go正答数," +
+        s.nogo_correct_count + "\n";
+
+
+      csv +=
+        "Go正答率(%)," +
+        f1(s.go_accuracy) + "\n";
+
+      csv +=
+        "No-Go正答率(%)," +
+        f1(s.nogo_accuracy) + "\n";
+
+
+      csv +=
+        "Commission Error数," +
+        s.commission_count + "\n";
+
+      csv +=
+        "Commission Error率(%)," +
+        f1(s.commission_rate) + "\n";
+
+
+      csv +=
+        "Omission Error数," +
+        s.omission_count + "\n";
+
+      csv +=
+        "Omission Error率(%)," +
+        f1(s.omission_rate) + "\n";
+
+
+      csv +=
+        "Overall Accuracy(%)," +
+        f1(s.overall_accuracy) + "\n";
+
+
+      csv +=
+        "Hit Rate," +
+        f3(s.hit_rate) + "\n";
+
+      csv +=
+        "False Alarm Rate," +
+        f3(s.fa_rate) + "\n";
+
+
+      csv +=
+        "d-prime," +
+        f2(s.dprime) + "\n";
+
+      csv +=
+        "Beta," +
+        f2(s.beta) + "\n";
+    }
+
+
+    appendSummary(
+      "Block 1 集計結果",
+      summary_block1
+    );
+
+    appendSummary(
+      "Block 2 集計結果",
+      summary_block2
+    );
+
+    appendSummary(
+      "本試行全体 集計結果",
+      summary_total
+    );
+
+
+    /* =====================================================
+       CSVダウンロード
+    ===================================================== */
+
+    const bom =
+      new Uint8Array(
+        [0xEF,0xBB,0xBF]
+      );
+
+    const blob =
+      new Blob(
+        [bom,csv],
+        {
+          type:
+          "text/csv;charset=utf-8;"
+        }
+      );
+
+    const link =
+      document.createElement("a");
+
+    link.href =
+      URL.createObjectURL(blob);
+
+    link.download =
+      participant_id +
+      "_GoNoGo結果.csv";
 
     link.click();
 
+    URL.revokeObjectURL(link.href);
   }
 
 });
+
+
+/* =========================================================
+   Timeline
+========================================================= */
 
 let timeline = [];
 
 let participant_id = "";
 
+
+/* =========================================================
+   被験者ID
+========================================================= */
+
 const participant_form = {
+
   type: jsPsychSurveyText,
+
   questions: [
     {
-      prompt: "被験者IDを入力してください",
-      placeholder: "例：P001",
+      prompt:
+        "被験者IDを入力してください",
+      placeholder:
+        "例：P001",
       required: true
     }
   ],
 
   button_label: "開始",
 
-  on_finish:function(data){
+  on_finish: function(data) {
 
-  participant_id =
-    data.response.Q0;
+    participant_id =
+      data.response.Q0.trim();
 
-  jsPsych.data.addProperties({
+    jsPsych.data.addProperties({
 
-    participant_id:
-      participant_id,
+      participant_id:
+        participant_id,
 
-    date:
-      new Date()
-      .toLocaleString("ja-JP")
+      date:
+        new Date()
+        .toLocaleString("ja-JP")
 
-  });
-
-}
+    });
+  }
 };
 
 timeline.push(participant_form);
 
-let stimulus_duration = 500;
-let current_mode = "";
+
+/* =========================================================
+   説明画面
+========================================================= */
 
 timeline.push({
-  type: jsPsychHtmlKeyboardResponse,
+
+  type:
+    jsPsychHtmlKeyboardResponse,
+
   stimulus: `
+
     <h2>Go / No-Go 課題</h2>
-    <p><strong>青い丸</strong>が出たら、スペースキーを押してください。</p>
-    <p><strong>赤い丸</strong>が出たら、何も押さないでください。</p>
-    <p>スペースキーを押すと開始します。</p>
+
+    <p>
+      <strong>青い丸</strong>が出たら、
+      スペースキーを押してください。
+    </p>
+
+    <p>
+      <strong>赤い丸</strong>が出たら、
+      何も押さないでください。
+    </p>
+
+    <p>
+      スペースキーを押すと開始します。
+    </p>
+
   `,
-  choices: [" "]
+
+  choices:[" "]
+
 });
 
+
+/* =========================================================
+   Fixation
+========================================================= */
+
 function makeFixation() {
+
   return {
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: '<div style="font-size:60px;">+</div>',
-    choices: "NO_KEYS",
-    trial_duration: 250
+
+    type:
+      jsPsychHtmlKeyboardResponse,
+
+    stimulus:
+      '<div style="font-size:60px;">+</div>',
+
+    choices:
+      "NO_KEYS",
+
+    trial_duration:
+      250
   };
 }
 
-function makeTrial(stimulus_type, color, block_number = null) {
+
+/* =========================================================
+   Trial作成
+
+   modeを引数として直接保存することで
+   practice/mainの混入を防止
+========================================================= */
+
+function makeTrial(
+  stimulus_type,
+  color,
+  mode,
+  block_number
+) {
+
   return {
-    type: jsPsychHtmlKeyboardResponse,
+
+    type:
+      jsPsychHtmlKeyboardResponse,
+
     stimulus: `
+
       <div style="
         width:160px;
         height:160px;
         border-radius:50%;
         background-color:${color};
-        margin: 100px auto;
-      "></div>
-    `,
-    choices: [" "],
-    trial_duration: stimulus_duration,
-    response_ends_trial: false,
-    data: {
-  task: "go_nogo",
-  mode: current_mode,
-  stimulus_type: stimulus_type,
-  color: color,
-  stimulus_duration: stimulus_duration,
-   block: block_number
-  },
+        margin:100px auto;
+      ">
+      </div>
 
-    on_finish: function(data) {
-      if (stimulus_type === "go") {
-        data.correct = data.response !== null;
-      } else {
-        data.correct = data.response === null;
+    `,
+
+    choices:[" "],
+
+    trial_duration:500,
+
+    response_ends_trial:false,
+
+    data:{
+
+      task:
+        "go_nogo",
+
+      mode:
+        mode,
+
+      stimulus_type:
+        stimulus_type,
+
+      color:
+        color,
+
+      stimulus_duration:
+        500,
+
+      block:
+        block_number
+    },
+
+
+    on_finish:function(data) {
+
+      /* -----------------------------------------------
+         Go
+      ----------------------------------------------- */
+
+      if (
+        stimulus_type === "go"
+      ) {
+
+        data.correct =
+          data.response !== null;
+
       }
 
-      if (stimulus_type === "go" && data.response === null) {
-        data.error_type = "omission";
-      } else if (stimulus_type === "nogo" && data.response !== null) {
-        data.error_type = "commission";
-      } else {
-        data.error_type = "none";
+      /* -----------------------------------------------
+         No-Go
+      ----------------------------------------------- */
+
+      else {
+
+        data.correct =
+          data.response === null;
+
+      }
+
+
+      /* -----------------------------------------------
+         Error type
+      ----------------------------------------------- */
+
+      if (
+        stimulus_type === "go"
+        &&
+        data.response === null
+      ) {
+
+        data.error_type =
+          "omission";
+
+      }
+
+      else if (
+        stimulus_type === "nogo"
+        &&
+        data.response !== null
+      ) {
+
+        data.error_type =
+          "commission";
+
+      }
+
+      else {
+
+        data.error_type =
+          "none";
       }
     }
   };
 }
 
-function createTrialList(go_count, nogo_count) {
+
+/* =========================================================
+   Trial list
+========================================================= */
+
+function createTrialList(
+  go_count,
+  nogo_count
+) {
 
   let trials = [];
 
-  for(let i=0; i<go_count; i++){
-    trials.push(["go","blue"]);
+  for (
+    let i=0;
+    i<go_count;
+    i++
+  ) {
+
+    trials.push(
+      ["go","blue"]
+    );
   }
 
-  for(let i=0; i<nogo_count; i++){
-    trials.push(["nogo","red"]);
+  for (
+    let i=0;
+    i<nogo_count;
+    i++
+  ) {
+
+    trials.push(
+      ["nogo","red"]
+    );
   }
 
-  return jsPsych.randomization.shuffle(trials);
-
+  return jsPsych
+    .randomization
+    .shuffle(trials);
 }
 
-let trial_list = [
-  ["go", "blue"], ["go", "blue"], ["go", "blue"], ["go", "blue"],
-  ["go", "blue"], ["go", "blue"], ["go", "blue"], ["go", "blue"],
-  ["nogo", "red"], ["nogo", "red"]
-];
+
+/* =========================================================
+   練習
+   10試行
+   Go 7 / No-Go 3
+========================================================= */
+
+const practice_trials =
+  createTrialList(7,3);
+
 
 timeline.push({
-  type: jsPsychHtmlKeyboardResponse,
+
+  type:
+    jsPsychHtmlKeyboardResponse,
+
   stimulus: `
-  <h2>練習試行</h2>
-  <p>青丸ならスペースキー</p>
-  <p>赤丸なら押さない</p>
-  <p>スペースキーで開始</p>
+
+    <h2>練習試行</h2>
+
+    <p>
+      青丸ならスペースキー
+    </p>
+
+    <p>
+      赤丸なら押さない
+    </p>
+
+    <p>
+      スペースキーで開始
+    </p>
+
   `,
+
   choices:[" "]
+
 });
 
-// 練習：10試行、刺激時間500ms
-let practice_trials = createTrialList(7, 3);
 
-// 本試行：100試行 × 2ブロック（各ブロック Go 70試行、No-Go 30試行）
-let main_trials_block1 = createTrialList(70, 30);
-let main_trials_block2 = createTrialList(70, 30);
+for (
+  let i=0;
+  i<practice_trials.length;
+  i++
+) {
 
-current_mode = "practice";
-stimulus_duration = 500;
+  timeline.push(
+    makeFixation()
+  );
 
-for (let i=0; i<practice_trials.length; i++){
-  timeline.push(makeFixation());
-  timeline.push(makeTrial(practice_trials[i][0], practice_trials[i][1], "practice"));
-}
-
-timeline.push({
-  type: jsPsychHtmlKeyboardResponse,
-  stimulus: `
-    <h2>練習終了</h2>
-    <p>これから本試行を開始します。</p>
-    <p>本試行は100試行を2回行います。</p>
-    <p>1回目と2回目の間に60秒間の休憩があります。</p>
-    <p>青い丸ではスペースキーを押し、赤い丸では何も押さないでください。</p>
-    <p>準備ができたらスペースキーを押してください。</p>
-  `,
-  choices:[" "]
-});
-
-// 本試行ブロック1
-current_mode = "main";
-stimulus_duration = 500;
-
-for(let i=0; i<main_trials_block1.length; i++){
-  timeline.push(makeFixation());
-  timeline.push(makeTrial(main_trials_block1[i][0], main_trials_block1[i][1], 1));
-}
-
-// 60秒休憩（スキップ不可）
-timeline.push({
-  type: jsPsychHtmlKeyboardResponse,
-  stimulus: `
-    <h2>休憩</h2>
-    <p>1回目の本試行が終了しました。</p>
-    <p>60秒間休憩してください。</p>
-    <p>残り <span id="rest-countdown" style="font-size:36px;font-weight:bold;">60</span> 秒</p>
-    <p>休憩終了後、自動的に次の画面へ進みます。</p>
-  `,
-  choices: "NO_KEYS",
-  trial_duration: 60000,
-  data: {task:"rest", rest_duration_ms:60000},
-  on_load: function(){
-    let remaining = 60;
-    const countdown = document.getElementById("rest-countdown");
-    const timer = setInterval(function(){
-      remaining -= 1;
-      if(countdown) countdown.textContent = Math.max(remaining, 0);
-      if(remaining <= 0) clearInterval(timer);
-    }, 1000);
-    window.restCountdownTimer = timer;
-  },
-  on_finish: function(){
-    if(window.restCountdownTimer){
-      clearInterval(window.restCountdownTimer);
-      window.restCountdownTimer = null;
-    }
-  }
-});
-
-timeline.push({
-  type: jsPsychHtmlKeyboardResponse,
-  stimulus: `
-    <h2>本試行 2回目</h2>
-    <p>これから2回目の100試行を開始します。</p>
-    <p>青い丸ではスペースキーを押し、赤い丸では何も押さないでください。</p>
-    <p>準備ができたらスペースキーを押してください。</p>
-  `,
-  choices:[" "]
-});
-
-// 本試行ブロック2
-for(let i=0; i<main_trials_block2.length; i++){
-  timeline.push(makeFixation());
-  timeline.push(makeTrial(main_trials_block2[i][0], main_trials_block2[i][1], 2));
-}
-
-timeline.push({
-
-  type: jsPsychHtmlKeyboardResponse,
-
-  stimulus: function(){
-
-let data = jsPsych.data.get()
-  .filter({task:"go_nogo"});
-
-let go_data =
-  data.filter({stimulus_type:"go"});
-
-let nogo_data =
-  data.filter({stimulus_type:"nogo"});
-
-let go_rt =
-  go_data
-  .filterCustom(x => x.rt !== null)
-  .select("rt")
-  .values;
-
-if (go_rt.length === 0) {
-  go_rt = [NaN];
-}
-
-let mean_rt =
-  go_rt.reduce((a,b)=>a+b,0)
-  / go_rt.length;
- 
-let sd_rt =
-Math.sqrt(
-
-  go_rt.reduce(
-    (sum,x)=>
-      sum + Math.pow(x-mean_rt,2),
-    0
-  )
-
-  /(go_rt.length-1)
-
-);
-
-let sorted_rt =
-[...go_rt].sort((a,b)=>a-b);
-
-let median_rt;
-
-if (sorted_rt.length % 2 === 0) {
-  median_rt =
-    (
-      sorted_rt[sorted_rt.length/2 - 1] +
-      sorted_rt[sorted_rt.length/2]
-    ) / 2;
-} else {
-  median_rt =
-    sorted_rt[
-      Math.floor(sorted_rt.length/2)
-    ];
-}
-
-let min_rt =
-Math.min(...go_rt);
-
-let max_rt =
-Math.max(...go_rt);
-
-let n_trials =
-go_rt.length;
-
-let se_rt =
-sd_rt / Math.sqrt(go_rt.length);
-
-let cv_rt =
-sd_rt / mean_rt;
-
-let go_accuracy =
-100 *
-go_data
-.select("correct")
-.mean();
-
-let nogo_accuracy =
-100 *
-nogo_data
-.select("correct")
-.mean();
-
-let commission_rate =
-100 -
-nogo_accuracy;
-
-let omission_rate =
-100 -
-go_accuracy;
-
-function z(p){
-
-  let a1=-39.6968302866538;
-  let a2=220.946098424521;
-  let a3=-275.928510446969;
-  let a4=138.357751867269;
-  let a5=-30.6647980661472;
-  let a6=2.50662827745924;
-
-  let b1=-54.4760987982241;
-  let b2=161.585836858041;
-  let b3=-155.698979859887;
-  let b4=66.8013118877197;
-  let b5=-13.2806815528857;
-
-  let q = p - 0.5;
-  let r = q*q;
-
-  return q *
-  (
-    (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6)
-    /
-    (((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1)
+  timeline.push(
+    makeTrial(
+      practice_trials[i][0],
+      practice_trials[i][1],
+      "practice",
+      "practice"
+    )
   );
 }
 
-let hit_rate =
-go_accuracy / 100;
 
-let fa_rate =
-commission_rate / 100;
+/* =========================================================
+   本試行開始画面
+========================================================= */
 
-hit_rate =
-Math.min(
-  Math.max(hit_rate,0.01),
-  0.99
-);
+timeline.push({
 
-fa_rate =
-Math.min(
-  Math.max(fa_rate,0.01),
-  0.99
-);
+  type:
+    jsPsychHtmlKeyboardResponse,
 
-let dprime =
-z(hit_rate)
--
-z(fa_rate);
+  stimulus: `
 
-let beta =
-Math.exp(
+    <h2>練習終了</h2>
 
-  (
-    Math.pow(
-      z(fa_rate),2
-    )
-    -
-    Math.pow(
-      z(hit_rate),2
-    )
-  ) / 2
+    <p>
+      これから本試行を開始します。
+    </p>
 
-);
+    <p>
+      本試行は100試行を2回行います。
+    </p>
 
-window.mean_rt = mean_rt;
-window.median_rt = median_rt;
-window.min_rt = min_rt;
-window.max_rt = max_rt;
-window.n_trials = n_trials;
+    <p>
+      1回目と2回目の間に
+      60秒間の休憩があります。
+    </p>
 
-window.sd_rt = sd_rt;
-window.se_rt = se_rt;
-window.cv_rt = cv_rt;
+    <p>
+      青い丸ではスペースキーを押し、
+      赤い丸では何も押さないでください。
+    </p>
 
-window.go_accuracy = go_accuracy;
-window.nogo_accuracy = nogo_accuracy;
+    <p>
+      準備ができたら
+      スペースキーを押してください。
+    </p>
 
-window.commission_rate = commission_rate;
-window.omission_rate = omission_rate;
+  `,
 
-window.dprime = dprime;
-window.beta = beta;
-
-return `
-
-<h2>測定結果</h2>
-
-<p>平均RT : ${mean_rt.toFixed(1)} ms</p>
-
-<p>中央値RT : ${median_rt.toFixed(1)} ms</p>
-
-<p>最小RT : ${min_rt.toFixed(1)} ms</p>
-
-<p>最大RT : ${max_rt.toFixed(1)} ms</p>
-
-<p>有効試行数 : ${n_trials}</p>
-
-<p>RT標準偏差 : ${sd_rt.toFixed(1)}</p>
-
-<p>RT標準誤差 : ${se_rt.toFixed(1)}</p>
-
-<p>CV : ${cv_rt.toFixed(3)}</p>
-
-<p>Go正答率 : ${go_accuracy.toFixed(1)}%</p>
-
-<p>No-Go正答率 : ${nogo_accuracy.toFixed(1)}%</p>
-
-<p>Commission Error率 :
-${commission_rate.toFixed(1)}%</p>
-
-<p>Omission Error率 :
-${omission_rate.toFixed(1)}%</p>
-
-<p>d-prime :
-${dprime.toFixed(2)}</p>
-
-<p>Beta :
-${beta.toFixed(2)}</p>
-
-<p>スペースキーを押すと終了します</p>
-
-`;
-},
-choices:[" "]
+  choices:[" "]
 
 });
 
+
+/* =========================================================
+   Block 1
+   Go 70 / No-Go 30
+========================================================= */
+
+const main_trials_block1 =
+  createTrialList(70,30);
+
+
+for (
+  let i=0;
+  i<main_trials_block1.length;
+  i++
+) {
+
+  timeline.push(
+    makeFixation()
+  );
+
+  timeline.push(
+    makeTrial(
+      main_trials_block1[i][0],
+      main_trials_block1[i][1],
+      "main",
+      1
+    )
+  );
+}
+
+
+/* =========================================================
+   60秒休憩
+========================================================= */
+
+timeline.push({
+
+  type:
+    jsPsychHtmlKeyboardResponse,
+
+  stimulus: `
+
+    <h2>休憩</h2>
+
+    <p>
+      1回目の本試行が終了しました。
+    </p>
+
+    <p>
+      60秒間休憩してください。
+    </p>
+
+    <p>
+      残り
+      <span
+        id="rest-countdown"
+        style="
+          font-size:36px;
+          font-weight:bold;
+        "
+      >
+        60
+      </span>
+      秒
+    </p>
+
+    <p>
+      休憩終了後、
+      自動的に次の画面へ進みます。
+    </p>
+
+  `,
+
+  choices:
+    "NO_KEYS",
+
+  trial_duration:
+    60000,
+
+  data:{
+    task:"rest",
+    rest_duration_ms:60000
+  },
+
+
+  on_load:function() {
+
+    let remaining = 60;
+
+    const countdown =
+      document.getElementById(
+        "rest-countdown"
+      );
+
+    const timer =
+      setInterval(
+        function() {
+
+          remaining -= 1;
+
+          if (countdown) {
+
+            countdown.textContent =
+              Math.max(
+                remaining,
+                0
+              );
+          }
+
+          if (
+            remaining <= 0
+          ) {
+
+            clearInterval(timer);
+          }
+
+        },
+        1000
+      );
+
+    window.restCountdownTimer =
+      timer;
+  },
+
+
+  on_finish:function() {
+
+    if (
+      window.restCountdownTimer
+    ) {
+
+      clearInterval(
+        window.restCountdownTimer
+      );
+
+      window.restCountdownTimer =
+        null;
+    }
+  }
+
+});
+
+
+/* =========================================================
+   Block 2 開始
+========================================================= */
+
+timeline.push({
+
+  type:
+    jsPsychHtmlKeyboardResponse,
+
+  stimulus: `
+
+    <h2>本試行 2回目</h2>
+
+    <p>
+      これから2回目の
+      100試行を開始します。
+    </p>
+
+    <p>
+      青い丸ではスペースキーを押し、
+      赤い丸では何も押さないでください。
+    </p>
+
+    <p>
+      準備ができたら
+      スペースキーを押してください。
+    </p>
+
+  `,
+
+  choices:[" "]
+
+});
+
+
+/* =========================================================
+   Block 2
+   Go 70 / No-Go 30
+========================================================= */
+
+const main_trials_block2 =
+  createTrialList(70,30);
+
+
+for (
+  let i=0;
+  i<main_trials_block2.length;
+  i++
+) {
+
+  timeline.push(
+    makeFixation()
+  );
+
+  timeline.push(
+    makeTrial(
+      main_trials_block2[i][0],
+      main_trials_block2[i][1],
+      "main",
+      2
+    )
+  );
+}
+
+
+/* =========================================================
+   終了画面
+
+   被験者には詳細な認知成績を表示しない
+========================================================= */
+
+timeline.push({
+
+  type:
+    jsPsychHtmlKeyboardResponse,
+
+  stimulus: `
+
+    <h2>測定終了</h2>
+
+    <p>
+      Go / No-Go 課題は
+      すべて終了しました。
+    </p>
+
+    <p>
+      ご協力ありがとうございました。
+    </p>
+
+    <p>
+      スペースキーを押すと
+      結果が保存されます。
+    </p>
+
+  `,
+
+  choices:[" "]
+
+});
+
+
+/* =========================================================
+   実行
+========================================================= */
+
 jsPsych.run(timeline);
+
 </script>
+
 </html>
