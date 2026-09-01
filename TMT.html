@@ -314,12 +314,12 @@ button:active {
 
   <div>
 
-    <h2>
-      iPadを縦向きにしてください
+    <h2 id="orientationTitle">
+      iPadを縦向きにしてください / Please rotate the iPad to portrait orientation
     </h2>
 
-    <p>
-      この課題は縦向きで実施します。
+    <p id="orientationText">
+      この課題は縦向きで実施します。 / This task must be completed in portrait orientation.
     </p>
 
   </div>
@@ -409,32 +409,38 @@ const TIMEPOINTS = [
 
   {
     code: "T1",
-    name: "介入前 Baseline"
+    ja: "介入前 Baseline",
+    en: "Pre-intervention Baseline"
   },
 
   {
     code: "T2",
-    name: "介入4週間後"
+    ja: "介入4週間後",
+    en: "Week 4 of Intervention"
   },
 
   {
     code: "T3",
-    name: "介入8週間後"
+    ja: "介入8週間後",
+    en: "Week 8 of Intervention"
   },
 
   {
     code: "T4",
-    name: "Washout後 Baseline"
+    ja: "Washout後 Baseline",
+    en: "Post-washout Baseline"
   },
 
   {
     code: "T5",
-    name: "Washout後4週間後"
+    ja: "Washout後4週間後",
+    en: "Week 4 After Post-washout Baseline"
   },
 
   {
     code: "T6",
-    name: "Washout後8週間後"
+    ja: "Washout後8週間後",
+    en: "Week 8 After Post-washout Baseline"
   }
 
 ];
@@ -462,6 +468,61 @@ let results = [];
 let eventLog = [];
 
 let sessionStartTime = "";
+
+let language = "ja";
+
+
+function t(ja, en) {
+
+  return language === "en"
+    ? en
+    : ja;
+
+}
+
+
+function timepointName(timepoint) {
+
+  return language === "en"
+    ? timepoint.en
+    : timepoint.ja;
+
+}
+
+
+function updateOrientationLanguage() {
+
+  const title =
+    document.getElementById(
+      "orientationTitle"
+    );
+
+  const text =
+    document.getElementById(
+      "orientationText"
+    );
+
+  if (title) {
+
+    title.textContent =
+      t(
+        "iPadを縦向きにしてください",
+        "Please rotate the iPad to portrait orientation"
+      );
+
+  }
+
+  if (text) {
+
+    text.textContent =
+      t(
+        "この課題は縦向きで実施します。",
+        "This task must be completed in portrait orientation."
+      );
+
+  }
+
+}
 
 
 /* =========================================================
@@ -1841,7 +1902,27 @@ function showParticipantScreen() {
 
 
       <p>
-        被験者IDを入力してください。
+        <strong>
+          言語 / Language
+        </strong>
+      </p>
+
+
+      <select id="languageSelect">
+
+        <option value="ja">
+          日本語
+        </option>
+
+        <option value="en">
+          English
+        </option>
+
+      </select>
+
+
+      <p>
+        被験者ID / Participant ID
       </p>
 
 
@@ -1851,7 +1932,7 @@ function showParticipantScreen() {
 
         type="text"
 
-        placeholder="例：01 または 001"
+        placeholder="例：01 または 001 / e.g., 01 or 001"
 
         inputmode="numeric"
 
@@ -1863,15 +1944,13 @@ function showParticipantScreen() {
 
 
       <p class="small">
-
-        半角数字2桁または3桁で
-        入力してください。
-
+        半角数字2桁または3桁で入力してください。 /
+        Enter a 2- or 3-digit participant ID.
       </p>
 
 
       <p>
-        測定時点を選択してください。
+        測定時点 / Measurement Time Point
       </p>
 
 
@@ -1892,7 +1971,10 @@ function showParticipantScreen() {
                 value="${index}"
               >
 
-                ${timepoint.name}
+                ${timepoint.code}：
+                ${timepoint.ja}
+                /
+                ${timepoint.en}
 
               </option>
 
@@ -1912,7 +1994,7 @@ function showParticipantScreen() {
 
       <button id="participantButton">
 
-        次へ
+        次へ / Next
 
       </button>
 
@@ -1932,6 +2014,26 @@ function showParticipantScreen() {
       function() {
 
 
+        language =
+
+          document
+            .getElementById(
+              "languageSelect"
+            )
+            .value;
+
+
+        document.documentElement.lang =
+          language === "en"
+          ?
+          "en"
+          :
+          "ja";
+
+
+        updateOrientationLanguage();
+
+
         const value =
 
           document
@@ -1947,18 +2049,18 @@ function showParticipantScreen() {
         ) {
 
           alert(
-            "被験者IDを入力してください。"
+
+            t(
+              "被験者IDを入力してください。",
+              "Please enter the participant ID."
+            )
+
           );
 
           return;
 
         }
 
-
-        /*
-          2桁または3桁の
-          半角数字のみ
-        */
 
         if (
           !/^\d{2,3}$/.test(
@@ -1968,7 +2070,10 @@ function showParticipantScreen() {
 
           alert(
 
-            "被験者IDは半角数字2桁または3桁で入力してください。\n例：01、12、001、123"
+            t(
+              "被験者IDは半角数字2桁または3桁で入力してください。\n例：01、12、001、123",
+              "Participant ID must contain 2 or 3 digits.\nExamples: 01, 12, 001, 123"
+            )
 
           );
 
@@ -2059,16 +2164,21 @@ function showInstruction() {
 
 
       <p>
-        測定時点：
+        ${t(
+          "測定時点",
+          "Measurement Time Point"
+        )}：
         <strong>
-          ${selectedTimepoint.name}
+          ${timepointName(selectedTimepoint)}
         </strong>
       </p>
 
 
       <p>
-        この課題は
-        Apple Pencilを使用して行います。
+        ${t(
+          "この課題はApple Pencilを使用して行います。",
+          "This task is completed using an Apple Pencil."
+        )}
       </p>
 
 
@@ -2101,35 +2211,45 @@ function showInstruction() {
 
 
       <p>
-        正しい順番で
-        円をつないでください。
+        ${t(
+          "正しい順番で円をつないでください。",
+          "Connect the circles in the correct sequence."
+        )}
       </p>
 
 
       <p>
-        できるだけ
-        Apple Pencilを画面から離さずに
-        行ってください。
+        ${t(
+          "できるだけApple Pencilを画面から離さずに行ってください。",
+          "Try to keep the Apple Pencil in contact with the screen as much as possible."
+        )}
       </p>
 
 
       <p>
         <strong>
-          Apple Pencilが最初の「1」に
-          触れた瞬間から時間測定を開始します。
+          ${t(
+            "Apple Pencilが最初の「1」に触れた瞬間から時間測定を開始します。",
+            "Timing begins the moment the Apple Pencil touches the first “1.”"
+          )}
         </strong>
       </p>
 
 
       <p>
-        TMT-A → TMT-Bを
-        3回繰り返します。
+        ${t(
+          "TMT-A → TMT-Bを3回繰り返します。",
+          "You will complete the TMT-A → TMT-B sequence three times."
+        )}
       </p>
 
 
       <button id="practiceButton">
 
-        練習を開始
+        ${t(
+          "練習を開始",
+          "Start Practice"
+        )}
 
       </button>
 
@@ -2193,19 +2313,27 @@ function startPracticeA() {
         <div class="screen">
 
           <h2>
-            TMT-A 練習終了
+            ${t(
+              "TMT-A 練習終了",
+              "TMT-A Practice Complete"
+            )}
           </h2>
 
 
           <p>
-            続いて
-            TMT-Bの練習を行います。
+            ${t(
+              "続いてTMT-Bの練習を行います。",
+              "Next, you will complete the TMT-B practice."
+            )}
           </p>
 
 
           <button id="practiceBButton">
 
-            TMT-B練習へ
+            ${t(
+              "TMT-B練習へ",
+              "Continue to TMT-B Practice"
+            )}
 
           </button>
 
@@ -2273,30 +2401,43 @@ function startPracticeB() {
         <div class="screen">
 
           <h2>
-            練習終了
+            ${t(
+              "練習終了",
+              "Practice Complete"
+            )}
           </h2>
 
 
           <p>
-            ここから本試行を開始します。
+            ${t(
+              "ここから本試行を開始します。",
+              "The main task will now begin."
+            )}
           </p>
 
 
           <p>
-            TMT-A → TMT-Bを
-            3回行います。
+            ${t(
+              "TMT-A → TMT-Bを3回行います。",
+              "You will complete the TMT-A → TMT-B sequence three times."
+            )}
           </p>
 
 
           <p>
-            「1」にApple Pencilが
-            触れた瞬間から測定します。
+            ${t(
+              "「1」にApple Pencilが触れた瞬間から測定します。",
+              "Timing begins the moment the Apple Pencil touches “1.”"
+            )}
           </p>
 
 
           <button id="mainStartButton">
 
-            本試行へ
+            ${t(
+              "本試行へ",
+              "Start Main Task"
+            )}
 
           </button>
 
@@ -2429,9 +2570,9 @@ function startMainTask(
 
           REST_A_TO_B_SEC,
 
-          `TMT-A ${repetition}回目終了`,
+          t(`TMT-A ${repetition}回目終了`, `TMT-A ${repetition} Complete`),
 
-          `次はTMT-B ${repetition}回目です。`,
+          t(`次はTMT-B ${repetition}回目です。`, `Next: TMT-B ${repetition}.`),
 
           function() {
 
@@ -2473,9 +2614,9 @@ function startMainTask(
 
           REST_B_TO_A_SEC,
 
-          `TMT-B ${repetition}回目終了`,
+          t(`TMT-B ${repetition}回目終了`, `TMT-B ${repetition} Complete`),
 
-          `次はTMT-A ${repetition + 1}回目です。`,
+          t(`次はTMT-A ${repetition + 1}回目です。`, `Next: TMT-A ${repetition + 1}.`),
 
           function() {
 
@@ -2541,7 +2682,10 @@ function showBreak(
 
 
       <p>
-        休憩してください。
+        ${t(
+          "休憩してください。",
+          "Please take a break."
+        )}
       </p>
 
 
@@ -2556,14 +2700,19 @@ function showBreak(
 
 
       <p>
-        秒
+        ${t(
+          "秒",
+          "seconds"
+        )}
       </p>
 
 
       <p class="small">
 
-        0秒になると
-        自動的に次の課題へ進みます。
+        ${t(
+          "0秒になると自動的に次の課題へ進みます。",
+          "The next task will begin automatically when the countdown reaches 0."
+        )}
 
       </p>
 
@@ -2675,11 +2824,11 @@ function startTask(config) {
 
           ?
 
-          `TMT-${type} 練習`
+          t(`TMT-${type} 練習`, `TMT-${type} Practice`)
 
           :
 
-          `TMT-${type} ${repetition}回目`
+          t(`TMT-${type} ${repetition}回目`, `TMT-${type} ${repetition}`)
 
         }
 
@@ -2694,11 +2843,11 @@ function startTask(config) {
 
           ?
 
-          "Apple Pencilで「1」から順番につないでください"
+          t("Apple Pencilで「1」から順番につないでください", "Using the Apple Pencil, connect the circles in numerical order starting from “1.”")
 
           :
 
-          "Apple Pencilで「1」から数字と英字を交互につないでください"
+          t("Apple Pencilで「1」から数字と英字を交互につないでください", "Using the Apple Pencil, connect the circles by alternating numbers and letters, starting from “1.”")
 
         }
 
@@ -2707,8 +2856,7 @@ function startTask(config) {
 
       <div class="small">
 
-        「1」に触れた瞬間から
-        時間測定を開始します
+        ${t("「1」に触れた瞬間から時間測定を開始します", "Timing begins the moment you touch “1.”")}
 
       </div>
 
@@ -3362,7 +3510,7 @@ function logEvent(
       selectedTimepoint.code,
 
     timepoint_name:
-      selectedTimepoint.name,
+      timepointName(selectedTimepoint),
 
     set_number:
       selectedSetNumber,
@@ -3630,7 +3778,7 @@ function registerError(
 
     message.textContent =
 
-      "順番が違います。直前の正しい位置から続けてください。";
+      t("順番が違います。直前の正しい位置から続けてください。", "Incorrect sequence. Continue from the last correct circle.");
 
 
     setTimeout(
@@ -3656,11 +3804,11 @@ function registerError(
 
             ?
 
-            "Apple Pencilで「1」から順番につないでください"
+            t("Apple Pencilで「1」から順番につないでください", "Using the Apple Pencil, connect the circles in numerical order starting from “1.”")
 
             :
 
-            "Apple Pencilで「1」から数字と英字を交互につないでください";
+            t("Apple Pencilで「1」から数字と英字を交互につないでください", "Using the Apple Pencil, connect the circles by alternating numbers and letters, starting from “1.”");
 
         }
 
@@ -3759,7 +3907,7 @@ canvas.addEventListener(
 
           message.textContent =
 
-            `最初は ${points[0].label} から開始してください`;
+            t(`最初は ${points[0].label} から開始してください`, `Please start from ${points[0].label}.`);
 
         }
 
@@ -3896,7 +4044,7 @@ canvas.addEventListener(
 
         message.textContent =
 
-          `直前の ${points[previousIndex].label} から再開してください`;
+          t(`直前の ${points[previousIndex].label} から再開してください`, `Please resume from the previous correct circle, ${points[previousIndex].label}.`);
 
       }
 
@@ -4337,7 +4485,7 @@ function finishTask() {
 
 
     timepoint_name:
-      selectedTimepoint.name,
+      timepointName(selectedTimepoint),
 
 
     set_number:
@@ -4581,7 +4729,6 @@ function showResults() {
 
 
     const A =
-
       getResult(
         "A",
         repetition
@@ -4589,7 +4736,6 @@ function showResults() {
 
 
     const B =
-
       getResult(
         "B",
         repetition
@@ -4597,34 +4743,27 @@ function showResults() {
 
 
     const difference =
-
       B.completion_sec
       -
       A.completion_sec;
 
 
     const ratio =
-
       B.completion_sec
       /
       A.completion_sec;
 
 
     const proportionalScore =
-
       difference
       /
       A.completion_sec;
 
 
     const logRatio =
-
       calculateLogRatio(
-
         A.completion_sec,
-
         B.completion_sec
-
       );
 
 
@@ -4657,122 +4796,92 @@ function showResults() {
 
 
   const meanA =
-
     mean(
-
       rows.map(
         row =>
           row.A.completion_sec
       )
-
     );
 
 
   const meanB =
-
     mean(
-
       rows.map(
         row =>
           row.B.completion_sec
       )
-
     );
 
 
   const meanDifference =
-
     mean(
-
       rows.map(
         row =>
           row.difference
       )
-
     );
 
 
   const meanRatio =
-
     mean(
-
       rows.map(
         row =>
           row.ratio
       )
-
     );
 
 
   const meanProportional =
-
     mean(
-
       rows.map(
         row =>
           row.proportional
       )
-
     );
 
 
   const meanLogRatio =
-
     mean(
-
       rows.map(
         row =>
           row.logRatio
       )
-
     );
 
 
   const meanAErrors =
-
     mean(
-
       rows.map(
         row =>
           row.A.errors
       )
-
     );
 
 
   const meanBErrors =
-
     mean(
-
       rows.map(
         row =>
           row.B.errors
       )
-
     );
 
 
   const meanALifts =
-
     mean(
-
       rows.map(
         row =>
           row.A.pen_lifts
       )
-
     );
 
 
   const meanBLifts =
-
     mean(
-
       rows.map(
         row =>
           row.B.pen_lifts
       )
-
     );
 
 
@@ -4784,18 +4893,28 @@ function showResults() {
 
 
       <h2>
-        【TMT課題 結果】
+        ${t(
+          "【TMT課題 結果】",
+          "TMT Results"
+        )}
       </h2>
 
 
       <p>
-        被験者ID：
+        ${t(
+          "被験者ID",
+          "Participant ID"
+        )}：
         ${participantID}
       </p>
 
 
       <p>
-        ${selectedTimepoint.name}
+        ${t(
+          "測定時点",
+          "Measurement Time Point"
+        )}：
+        ${timepointName(selectedTimepoint)}
       </p>
 
 
@@ -4805,15 +4924,24 @@ function showResults() {
         <tr>
 
           <th>
-            回
+            ${t(
+              "回",
+              "Trial"
+            )}
           </th>
 
           <th>
-            A時間
+            ${t(
+              "A時間",
+              "A Time"
+            )}
           </th>
 
           <th>
-            B時間
+            ${t(
+              "B時間",
+              "B Time"
+            )}
           </th>
 
           <th>
@@ -4833,19 +4961,31 @@ function showResults() {
           </th>
 
           <th>
-            A誤
+            ${t(
+              "A誤",
+              "A Errors"
+            )}
           </th>
 
           <th>
-            B誤
+            ${t(
+              "B誤",
+              "B Errors"
+            )}
           </th>
 
           <th>
-            A離筆
+            ${t(
+              "A離筆",
+              "A Pen Lifts"
+            )}
           </th>
 
           <th>
-            B離筆
+            ${t(
+              "B離筆",
+              "B Pen Lifts"
+            )}
           </th>
 
         </tr>
@@ -4865,62 +5005,50 @@ function showResults() {
 
 
                 <td>
-
                   ${format(
                     row.A.completion_sec,
                     2
                   )}
-
                 </td>
 
 
                 <td>
-
                   ${format(
                     row.B.completion_sec,
                     2
                   )}
-
                 </td>
 
 
                 <td>
-
                   ${format(
                     row.difference,
                     2
                   )}
-
                 </td>
 
 
                 <td>
-
                   ${format(
                     row.ratio,
                     3
                   )}
-
                 </td>
 
 
                 <td>
-
                   ${format(
                     row.proportional,
                     3
                   )}
-
                 </td>
 
 
                 <td>
-
                   ${format(
                     row.logRatio,
                     3
                   )}
-
                 </td>
 
 
@@ -4955,46 +5083,70 @@ function showResults() {
 
 
       <h3>
-        3回平均
+        ${t(
+          "3回平均",
+          "Mean of 3 Trials"
+        )}
       </h3>
 
 
       <p>
-        TMT-A平均完遂時間：
+        ${t(
+          "TMT-A平均完遂時間",
+          "Mean TMT-A Completion Time"
+        )}：
         <strong>
           ${format(
             meanA,
             2
           )}
-          秒
+          ${t(
+            "秒",
+            "s"
+          )}
         </strong>
       </p>
 
 
       <p>
-        TMT-B平均完遂時間：
+        ${t(
+          "TMT-B平均完遂時間",
+          "Mean TMT-B Completion Time"
+        )}：
         <strong>
           ${format(
             meanB,
             2
           )}
-          秒
+          ${t(
+            "秒",
+            "s"
+          )}
         </strong>
       </p>
 
 
       <p>
-        B−A平均：
+        ${t(
+          "B−A平均",
+          "Mean B−A"
+        )}：
         ${format(
           meanDifference,
           2
         )}
-        秒
+        ${t(
+          "秒",
+          "s"
+        )}
       </p>
 
 
       <p>
-        B/A平均：
+        ${t(
+          "B/A平均",
+          "Mean B/A"
+        )}：
         ${format(
           meanRatio,
           3
@@ -5003,7 +5155,10 @@ function showResults() {
 
 
       <p>
-        (B−A)/A平均：
+        ${t(
+          "(B−A)/A平均",
+          "Mean (B−A)/A"
+        )}：
         ${format(
           meanProportional,
           3
@@ -5012,7 +5167,10 @@ function showResults() {
 
 
       <p>
-        Log(B/A)平均：
+        ${t(
+          "Log(B/A)平均",
+          "Mean Log(B/A)"
+        )}：
         ${format(
           meanLogRatio,
           3
@@ -5021,7 +5179,10 @@ function showResults() {
 
 
       <p>
-        TMT-A平均エラー数：
+        ${t(
+          "TMT-A平均エラー数",
+          "Mean TMT-A Errors"
+        )}：
         ${format(
           meanAErrors,
           2
@@ -5030,7 +5191,10 @@ function showResults() {
 
 
       <p>
-        TMT-B平均エラー数：
+        ${t(
+          "TMT-B平均エラー数",
+          "Mean TMT-B Errors"
+        )}：
         ${format(
           meanBErrors,
           2
@@ -5039,7 +5203,10 @@ function showResults() {
 
 
       <p>
-        TMT-A平均離筆回数：
+        ${t(
+          "TMT-A平均離筆回数",
+          "Mean TMT-A Pen Lifts"
+        )}：
         ${format(
           meanALifts,
           2
@@ -5048,7 +5215,10 @@ function showResults() {
 
 
       <p>
-        TMT-B平均離筆回数：
+        ${t(
+          "TMT-B平均離筆回数",
+          "Mean TMT-B Pen Lifts"
+        )}：
         ${format(
           meanBLifts,
           2
@@ -5058,7 +5228,10 @@ function showResults() {
 
       <button id="downloadButton">
 
-        CSVを保存して終了
+        ${t(
+          "CSVを保存して終了",
+          "Save CSV and Finish"
+        )}
 
       </button>
 
@@ -5175,6 +5348,20 @@ function downloadCSV() {
 
 
   csv +=
+    "言語 / Language,"
+    +
+    (
+      language === "en"
+      ?
+      "English"
+      :
+      "Japanese"
+    )
+    +
+    "\n";
+
+
+  csv +=
     "測定時点コード,"
     +
     selectedTimepoint.code
@@ -5186,7 +5373,7 @@ function downloadCSV() {
     "測定時点,"
     +
     csvEscape(
-      selectedTimepoint.name
+      timepointName(selectedTimepoint)
     )
     +
     "\n";
@@ -6055,7 +6242,7 @@ function downloadCSV() {
     +
     selectedTimepoint.code
     +
-    "_TMT結果.csv";
+    "_TMT_results.csv";
 
 
   document.body
@@ -6085,15 +6272,24 @@ function downloadCSV() {
     <div class="screen">
 
       <h2>
-        測定終了
+        ${t(
+          "測定終了",
+          "Task Complete"
+        )}
       </h2>
 
       <p>
-        CSVファイルを保存しました。
+        ${t(
+          "CSVファイルを保存しました。",
+          "The CSV file has been saved."
+        )}
       </p>
 
       <p>
-        ご協力ありがとうございました。
+        ${t(
+          "ご協力ありがとうございました。",
+          "Thank you for your participation."
+        )}
       </p>
 
     </div>
