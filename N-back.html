@@ -9,7 +9,7 @@
 
 <script src="https://unpkg.com/jspsych@8.2.1"></script>
 <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
-<script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0"></script>
+<script src="https://unpkg.com/@jspsych/plugin-survey-html-form@2.1.0"></script>
 
 <link
   href="https://unpkg.com/jspsych@8.2.1/css/jspsych.css"
@@ -48,7 +48,8 @@ body {
   font-size: 19px;
 }
 
-.result-table td {
+.result-table td,
+.result-table th {
   border-bottom: 1px solid #ccc;
   padding: 7px 18px;
   text-align: left;
@@ -59,17 +60,17 @@ body {
   font-weight: bold;
 }
 
-select {
-  font-size: 22px;
-  padding: 12px;
-  min-width: 360px;
-  margin: 20px;
+select,
+input {
+  font-size: 21px;
+  padding: 10px;
+  margin: 8px;
 }
 
 button {
-  font-size: 22px;
-  padding: 12px 28px;
-  margin-top: 20px;
+  font-size: 21px;
+  padding: 10px 24px;
+  margin-top: 15px;
 }
 
 </style>
@@ -79,6 +80,7 @@ button {
 <body></body>
 
 <script>
+
 
 /* =========================================================
    1. 基本設定
@@ -115,32 +117,38 @@ const TIMEPOINTS = [
 
   {
     code: "T1",
-    name: "介入前 Baseline"
+    ja: "介入前 Baseline",
+    en: "Pre-intervention Baseline"
   },
 
   {
     code: "T2",
-    name: "介入4週間後"
+    ja: "介入4週間後",
+    en: "Week 4 of Intervention"
   },
 
   {
     code: "T3",
-    name: "介入8週間後"
+    ja: "介入8週間後",
+    en: "Week 8 of Intervention"
   },
 
   {
     code: "T4",
-    name: "Washout後 Baseline"
+    ja: "Washout後 Baseline",
+    en: "Post-washout Baseline"
   },
 
   {
     code: "T5",
-    name: "Washout後4週間後"
+    ja: "Washout後4週間後",
+    en: "Week 4 After Post-washout Baseline"
   },
 
   {
     code: "T6",
-    name: "Washout後8週間後"
+    ja: "Washout後8週間後",
+    en: "Week 8 After Post-washout Baseline"
   }
 
 ];
@@ -149,6 +157,8 @@ const TIMEPOINTS = [
 /* =========================================================
    3. 被験者情報
 ========================================================= */
+
+let language = "ja";
 
 let participant_id = "";
 
@@ -160,7 +170,27 @@ let experiment_date = "";
 
 
 /* =========================================================
-   4. 基本統計
+   4. 言語切替
+========================================================= */
+
+function t(ja, en) {
+
+  return language === "en"
+    ? en
+    : ja;
+}
+
+
+function timepointName(tp) {
+
+  return language === "en"
+    ? tp.en
+    : tp.ja;
+}
+
+
+/* =========================================================
+   5. 基本統計
 ========================================================= */
 
 function mean(values) {
@@ -199,7 +229,6 @@ function median(values) {
       +
       sorted[middle]
     ) / 2;
-
   }
 
   return sorted[middle];
@@ -235,8 +264,29 @@ function standardDeviation(values) {
 }
 
 
+function format(
+  value,
+  digits = 1
+) {
+
+  if (
+    !Number.isFinite(
+      value
+    )
+  ) {
+
+    return "";
+  }
+
+  return Number(value)
+    .toFixed(
+      digits
+    );
+}
+
+
 /* =========================================================
-   5. inverse normal CDF
+   6. inverse normal CDF
    d-prime計算用
 ========================================================= */
 
@@ -283,12 +333,18 @@ function normInv(p) {
   ];
 
   const plow = 0.02425;
-  const phigh = 1 - plow;
+
+  const phigh =
+    1 - plow;
 
   let q;
+
   let r;
 
-  if (p < plow) {
+
+  if (
+    p < plow
+  ) {
 
     q =
       Math.sqrt(
@@ -303,7 +359,10 @@ function normInv(p) {
     );
   }
 
-  if (p > phigh) {
+
+  if (
+    p > phigh
+  ) {
 
     q =
       Math.sqrt(
@@ -318,22 +377,25 @@ function normInv(p) {
     );
   }
 
+
   q =
     p - 0.5;
 
   r =
     q*q;
 
+
   return (
     (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q
     /
     (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1)
   );
+
 }
 
 
 /* =========================================================
-   6. Target位置生成
+   7. Target位置生成
 ========================================================= */
 
 function makeTargetPositions(
@@ -342,6 +404,12 @@ function makeTargetPositions(
 ) {
 
   const possible = [];
+
+
+  /*
+    最初の2試行は
+    2-back判定対象外
+  */
 
   for (
     let i = N_BACK;
@@ -352,10 +420,12 @@ function makeTargetPositions(
     possible.push(i);
   }
 
+
   const shuffled =
     jsPsych.randomization.shuffle(
       possible
     );
+
 
   return new Set(
     shuffled.slice(
@@ -363,11 +433,12 @@ function makeTargetPositions(
       targetCount
     )
   );
+
 }
 
 
 /* =========================================================
-   7. 刺激列生成
+   8. 刺激列生成
 ========================================================= */
 
 function generateNBackTrials(
@@ -377,6 +448,7 @@ function generateNBackTrials(
 ) {
 
   const trials = [];
+
 
   const targetPositions =
     makeTargetPositions(
@@ -393,13 +465,21 @@ function generateNBackTrials(
 
     let stimulus;
 
-    let isTarget = false;
+    let isTarget =
+      false;
+
 
     const validNBackTrial =
       i >= N_BACK;
 
 
-    if (!validNBackTrial) {
+    /* -----------------------------------------------------
+       最初の2試行
+    ----------------------------------------------------- */
+
+    if (
+      !validNBackTrial
+    ) {
 
       stimulus =
         jsPsych.randomization
@@ -411,6 +491,10 @@ function generateNBackTrials(
     }
 
 
+    /* -----------------------------------------------------
+       Target
+    ----------------------------------------------------- */
+
     else if (
       targetPositions.has(i)
     ) {
@@ -420,11 +504,16 @@ function generateNBackTrials(
           i-N_BACK
         ].stimulus;
 
+
       isTarget =
         true;
 
     }
 
+
+    /* -----------------------------------------------------
+       Non-target
+    ----------------------------------------------------- */
 
     else {
 
@@ -494,12 +583,14 @@ function generateNBackTrials(
 
   }
 
+
   return trials;
+
 }
 
 
 /* =========================================================
-   8. N-back Trial作成
+   9. N-back Trial作成
 ========================================================= */
 
 function createNBackBlock(
@@ -526,6 +617,10 @@ function createNBackBlock(
            </div>`,
 
 
+        /*
+          最初の2試行では回答しない
+        */
+
         choices:
 
           trial.valid_nback_trial
@@ -539,13 +634,25 @@ function createNBackBlock(
           "NO_KEYS",
 
 
+        /*
+          1試行2000 ms
+        */
+
         trial_duration:
           TRIAL_DURATION,
 
 
+        /*
+          文字は500 msで消える
+        */
+
         stimulus_duration:
           STIMULUS_DURATION,
 
+
+        /*
+          回答してもTrialは短縮しない
+        */
 
         response_ends_trial:
           false,
@@ -630,6 +737,10 @@ function createNBackBlock(
             data.response === null;
 
 
+          /* ------------------------------------------------
+             Target
+          ------------------------------------------------ */
+
           if (
             data.is_target
           ) {
@@ -658,6 +769,10 @@ function createNBackBlock(
 
           }
 
+
+          /* ------------------------------------------------
+             Non-target
+          ------------------------------------------------ */
 
           else {
 
@@ -702,15 +817,17 @@ function createNBackBlock(
       });
 
     }
+
   );
 
 
   return blockTimeline;
+
 }
 
 
 /* =========================================================
-   9. 結果集計
+   10. 結果集計
 ========================================================= */
 
 function calculateNBackResults(
@@ -744,6 +861,11 @@ function calculateNBackResults(
   }
 
 
+  /*
+    各Block最初の2試行を
+    解析対象外とする
+  */
+
   const valid =
     data.filter(
       d =>
@@ -764,6 +886,10 @@ function calculateNBackResults(
         d.is_target === false
     );
 
+
+  /* =======================================================
+     Counts
+  ======================================================= */
 
   const hit =
     targets.filter(
@@ -815,6 +941,10 @@ function calculateNBackResults(
     correctRejection;
 
 
+  /* =======================================================
+     Accuracy
+  ======================================================= */
+
   const accuracy =
 
     valid.length > 0
@@ -828,6 +958,10 @@ function calculateNBackResults(
 
     NaN;
 
+
+  /* =======================================================
+     Rates
+  ======================================================= */
 
   const hitRate =
 
@@ -884,6 +1018,10 @@ function calculateNBackResults(
 
     NaN;
 
+
+  /* =======================================================
+     d-prime
+  ======================================================= */
 
   let correctedHitRate =
     hitRate;
@@ -991,6 +1129,10 @@ function calculateNBackResults(
 
   }
 
+
+  /* =======================================================
+     Reaction Time
+  ======================================================= */
 
   const correctRTs =
 
@@ -1140,36 +1282,57 @@ function calculateNBackResults(
       )
 
   };
+
 }
 
 
 /* =========================================================
-   10. 表示用
+   11. CSV escape
 ========================================================= */
 
-function format(
-  value,
-  digits = 1
-) {
+function csvEscape(value) {
 
   if (
-    !Number.isFinite(
-      value
-    )
+    value === null
+    ||
+    value === undefined
   ) {
 
     return "";
   }
 
-  return Number(value)
-    .toFixed(
-      digits
+
+  const text =
+    String(value);
+
+
+  if (
+    text.includes(",")
+    ||
+    text.includes('"')
+    ||
+    text.includes("\n")
+  ) {
+
+    return (
+      '"'
+      +
+      text.replace(
+        /"/g,
+        '""'
+      )
+      +
+      '"'
     );
+  }
+
+
+  return text;
 }
 
 
 /* =========================================================
-   11. jsPsych初期化
+   12. jsPsych初期化
 ========================================================= */
 
 const jsPsych =
@@ -1199,23 +1362,39 @@ const jsPsych =
 
 
       /* ===================================================
-         基本情報
+         Basic Information
       =================================================== */
 
       csv +=
-        "===== 基本情報 =====\n";
+        "===== 基本情報 / Basic Information =====\n";
 
 
       csv +=
-        "被験者ID,"
+        "被験者ID / Participant ID,"
         +
-        participant_id
+        csvEscape(
+          participant_id
+        )
         +
         "\n";
 
 
       csv +=
-        "測定時点コード,"
+        "言語 / Language,"
+        +
+        (
+          language === "en"
+          ?
+          "English"
+          :
+          "Japanese"
+        )
+        +
+        "\n";
+
+
+      csv +=
+        "測定時点コード / Time Point Code,"
         +
         selectedTimepoint.code
         +
@@ -1223,19 +1402,23 @@ const jsPsych =
 
 
       csv +=
-        "測定時点,"
+        "測定時点 / Measurement Time Point,"
         +
-        selectedTimepoint.name
+        csvEscape(
+          timepointName(
+            selectedTimepoint
+          )
+        )
         +
         "\n";
 
 
       csv +=
-        "課題,2-back\n";
+        "課題 / Task,2-back\n";
 
 
       csv +=
-        "刺激提示時間(ms),"
+        "刺激提示時間 / Stimulus Duration (ms),"
         +
         STIMULUS_DURATION
         +
@@ -1243,7 +1426,7 @@ const jsPsych =
 
 
       csv +=
-        "1試行時間(ms),"
+        "1試行時間 / Trial Duration (ms),"
         +
         TRIAL_DURATION
         +
@@ -1251,7 +1434,15 @@ const jsPsych =
 
 
       csv +=
-        "本試行1試行数,"
+        "練習試行数 / Practice Trials,"
+        +
+        PRACTICE_TRIALS
+        +
+        "\n";
+
+
+      csv +=
+        "本試行1試行数 / Main Block 1 Trials,"
         +
         MAIN_TRIALS_PER_BLOCK
         +
@@ -1259,7 +1450,7 @@ const jsPsych =
 
 
       csv +=
-        "本試行2試行数,"
+        "本試行2試行数 / Main Block 2 Trials,"
         +
         MAIN_TRIALS_PER_BLOCK
         +
@@ -1267,7 +1458,7 @@ const jsPsych =
 
 
       csv +=
-        "各Block Target数,"
+        "各Block Target数 / Targets per Main Block,"
         +
         MAIN_TARGETS_PER_BLOCK
         +
@@ -1275,9 +1466,15 @@ const jsPsych =
 
 
       csv +=
-        "実施日時,"
+        "休憩時間 / Break Duration (s),60\n";
+
+
+      csv +=
+        "実施日時 / Date and Time,"
         +
-        experiment_date
+        csvEscape(
+          experiment_date
+        )
         +
         "\n";
 
@@ -1287,11 +1484,11 @@ const jsPsych =
       =================================================== */
 
       csv +=
-        "\n===== Trial level data =====\n";
+        "\n===== Trial-level Data =====\n";
 
 
       csv +=
-        "被験者ID,測定時点コード,測定時点,phase,block,trial_number,stimulus,valid_nback_trial,is_target,correct_response,response,response_type,correct,no_response,rt_ms\n";
+        "Participant_ID,Language,Timepoint,Phase,Block,Trial_Number,Stimulus,Valid_NBack_Trial,Is_Target,Correct_Response,Response,Response_Type,Correct,No_Response,RT_ms\n";
 
 
       const rawData =
@@ -1313,9 +1510,9 @@ const jsPsych =
 
             participant_id,
 
-            selectedTimepoint.code,
+            language,
 
-            selectedTimepoint.name,
+            selectedTimepoint.code,
 
             d.phase,
 
@@ -1341,8 +1538,16 @@ const jsPsych =
 
             d.rt ?? ""
 
-          ].join(",")
+          ]
+
+          .map(
+            csvEscape
+          )
+
+          .join(",")
+
           +
+
           "\n";
 
         }
@@ -1358,6 +1563,7 @@ const jsPsych =
         r
       ) {
 
+
         csv +=
           "\n===== "
           +
@@ -1367,7 +1573,7 @@ const jsPsych =
 
 
         csv +=
-          "総試行数,"
+          "Total Trials,"
           +
           r.total_trials
           +
@@ -1375,7 +1581,7 @@ const jsPsych =
 
 
         csv +=
-          "正答数,"
+          "Correct Responses,"
           +
           r.correct_count
           +
@@ -1383,10 +1589,10 @@ const jsPsych =
 
 
         csv +=
-          "正答率(%),"
+          "Accuracy (%),"
           +
           format(
-            r.accuracy*100,
+            r.accuracy * 100,
             1
           )
           +
@@ -1394,7 +1600,7 @@ const jsPsych =
 
 
         csv +=
-          "Target数,"
+          "Target Trials,"
           +
           r.target_count
           +
@@ -1402,7 +1608,7 @@ const jsPsych =
 
 
         csv +=
-          "Hit数,"
+          "Hits,"
           +
           r.hit_count
           +
@@ -1410,7 +1616,7 @@ const jsPsych =
 
 
         csv +=
-          "Miss数,"
+          "Misses,"
           +
           r.miss_count
           +
@@ -1418,10 +1624,10 @@ const jsPsych =
 
 
         csv +=
-          "Hit rate(%),"
+          "Hit Rate (%),"
           +
           format(
-            r.hit_rate*100,
+            r.hit_rate * 100,
             1
           )
           +
@@ -1429,10 +1635,10 @@ const jsPsych =
 
 
         csv +=
-          "Miss rate(%),"
+          "Miss Rate (%),"
           +
           format(
-            r.miss_rate*100,
+            r.miss_rate * 100,
             1
           )
           +
@@ -1440,7 +1646,7 @@ const jsPsych =
 
 
         csv +=
-          "Non-target数,"
+          "Non-target Trials,"
           +
           r.nontarget_count
           +
@@ -1448,7 +1654,7 @@ const jsPsych =
 
 
         csv +=
-          "Correct Rejection数,"
+          "Correct Rejections,"
           +
           r.correct_rejection_count
           +
@@ -1456,7 +1662,7 @@ const jsPsych =
 
 
         csv +=
-          "False Alarm数,"
+          "False Alarms,"
           +
           r.false_alarm_count
           +
@@ -1464,10 +1670,10 @@ const jsPsych =
 
 
         csv +=
-          "Correct Rejection rate(%),"
+          "Correct Rejection Rate (%),"
           +
           format(
-            r.correct_rejection_rate*100,
+            r.correct_rejection_rate * 100,
             1
           )
           +
@@ -1475,10 +1681,10 @@ const jsPsych =
 
 
         csv +=
-          "False Alarm rate(%),"
+          "False Alarm Rate (%),"
           +
           format(
-            r.false_alarm_rate*100,
+            r.false_alarm_rate * 100,
             1
           )
           +
@@ -1486,9 +1692,17 @@ const jsPsych =
 
 
         csv +=
-          "無反応数,"
+          "No Responses,"
           +
           r.no_response_count
+          +
+          "\n";
+
+
+        csv +=
+          "Non-target No Responses,"
+          +
+          r.nontarget_no_response_count
           +
           "\n";
 
@@ -1505,7 +1719,7 @@ const jsPsych =
 
 
         csv +=
-          "正答時平均RT(ms),"
+          "Mean Correct RT (ms),"
           +
           format(
             r.mean_correct_rt,
@@ -1516,7 +1730,7 @@ const jsPsych =
 
 
         csv +=
-          "正答時中央値RT(ms),"
+          "Median Correct RT (ms),"
           +
           format(
             r.median_correct_rt,
@@ -1527,7 +1741,7 @@ const jsPsych =
 
 
         csv +=
-          "Hit平均RT(ms),"
+          "Mean Hit RT (ms),"
           +
           format(
             r.mean_hit_rt,
@@ -1538,7 +1752,7 @@ const jsPsych =
 
 
         csv +=
-          "Correct Rejection平均RT(ms),"
+          "Mean Correct Rejection RT (ms),"
           +
           format(
             r.mean_correct_rejection_rt,
@@ -1549,7 +1763,7 @@ const jsPsych =
 
 
         csv +=
-          "RT標準偏差(ms),"
+          "Correct RT Standard Deviation (ms),"
           +
           format(
             r.sd_correct_rt,
@@ -1560,7 +1774,7 @@ const jsPsych =
 
 
         csv +=
-          "Hit RT標準偏差(ms),"
+          "Hit RT Standard Deviation (ms),"
           +
           format(
             r.sd_hit_rt,
@@ -1571,7 +1785,7 @@ const jsPsych =
 
 
         csv +=
-          "Correct Rejection RT標準偏差(ms),"
+          "Correct Rejection RT Standard Deviation (ms),"
           +
           format(
             r.sd_correct_rejection_rt,
@@ -1582,7 +1796,7 @@ const jsPsych =
 
 
         csv +=
-          "d-prime補正後Hit rate,"
+          "Corrected Hit Rate,"
           +
           format(
             r.corrected_hit_rate,
@@ -1593,7 +1807,7 @@ const jsPsych =
 
 
         csv +=
-          "d-prime補正後False Alarm rate,"
+          "Corrected False Alarm Rate,"
           +
           format(
             r.corrected_false_alarm_rate,
@@ -1606,19 +1820,19 @@ const jsPsych =
 
 
       addSummary(
-        "本試行1",
+        "Main Block 1",
         block1
       );
 
 
       addSummary(
-        "本試行2",
+        "Main Block 2",
         block2
       );
 
 
       addSummary(
-        "本試行全体",
+        "Overall Main Task",
         overall
       );
 
@@ -1672,7 +1886,7 @@ const jsPsych =
         +
         selectedTimepoint.code
         +
-        "_Nback結果.csv";
+        "_Nback_results.csv";
 
 
       document.body
@@ -1700,187 +1914,179 @@ const jsPsych =
 
 
 /* =========================================================
-   12. Timeline
+   13. Timeline
 ========================================================= */
 
 const timeline = [];
 
 
 /* =========================================================
-   13. 被験者ID入力
+   14. 言語・ID・測定時点入力
 ========================================================= */
 
 timeline.push({
 
   type:
-    jsPsychSurveyText,
+    jsPsychSurveyHtmlForm,
 
 
-  questions: [
+  html: `
 
-    {
+    <div class="text">
 
-      prompt:
-        "被験者IDを入力してください",
+      <h1>
+        2-back Task
+      </h1>
 
-      name:
-        "ID",
 
-      placeholder:
-        "例：01 または 001",
+      <p>
+        <strong>
+          言語 / Language
+        </strong>
+      </p>
 
-      required:
-        true
 
-    }
+      <select
+        name="language"
+        required
+      >
 
-  ],
+        <option value="ja">
+          日本語
+        </option>
+
+        <option value="en">
+          English
+        </option>
+
+      </select>
+
+
+      <p>
+        <strong>
+          被験者ID / Participant ID
+        </strong>
+      </p>
+
+
+      <input
+        name="participant_id"
+        type="text"
+        inputmode="numeric"
+        maxlength="3"
+        placeholder="01 / 001"
+        required
+      >
+
+
+      <p>
+        <strong>
+          測定時点 / Measurement Time Point
+        </strong>
+      </p>
+
+
+      <select
+        name="timepoint"
+        required
+      >
+
+        <option value="0">
+          T1：介入前 Baseline / Pre-intervention Baseline
+        </option>
+
+        <option value="1">
+          T2：介入4週間後 / Week 4 of Intervention
+        </option>
+
+        <option value="2">
+          T3：介入8週間後 / Week 8 of Intervention
+        </option>
+
+        <option value="3">
+          T4：Washout後 Baseline / Post-washout Baseline
+        </option>
+
+        <option value="4">
+          T5：Washout後4週間後 / Week 4 After Post-washout Baseline
+        </option>
+
+        <option value="5">
+          T6：Washout後8週間後 / Week 8 After Post-washout Baseline
+        </option>
+
+      </select>
+
+    </div>
+
+  `,
 
 
   button_label:
-    "次へ",
+    "開始 / Start",
 
 
   on_finish:
   function(data) {
 
-    participant_id =
 
+    language =
+      data.response.language;
+
+
+    participant_id =
       String(
-        data.response.ID
+        data.response.participant_id
       ).trim();
 
-  }
 
-});
-
-
-/* =========================================================
-   14. 測定時点選択
-========================================================= */
-
-timeline.push({
-
-  type:
-    jsPsychHtmlKeyboardResponse,
-
-
-  stimulus:
-  function() {
-
-    return `
-
-      <div class="text">
-
-        <h2>
-          測定時点を選択してください
-        </h2>
-
-
-        <select id="timepointSelect">
-
-          ${
-
-            TIMEPOINTS.map(
-
-              (t,index) => `
-
-                <option value="${index}">
-                  ${t.name}
-                </option>
-
-              `
-
-            ).join("")
-
-          }
-
-        </select>
-
-
-        <br>
-
-
-        <button id="timepointButton">
-          決定
-        </button>
-
-      </div>
-
-    `;
-
-  },
-
-
-  choices:
-    "NO_KEYS",
-
-
-  on_load:
-  function() {
-
-
-    document
-      .getElementById(
-        "timepointButton"
-      )
-      .addEventListener(
-
-        "click",
-
-        function() {
-
-
-          selectedTimepointIndex =
-
-            Number(
-
-              document
-                .getElementById(
-                  "timepointSelect"
-                )
-                .value
-
-            );
-
-
-          selectedTimepoint =
-
-            TIMEPOINTS[
-              selectedTimepointIndex
-            ];
-
-
-          experiment_date =
-
-            new Date()
-              .toLocaleString(
-                "ja-JP"
-              );
-
-
-          jsPsych.data.addProperties({
-
-            participant_id:
-              participant_id,
-
-            measurement_code:
-              selectedTimepoint.code,
-
-            measurement_label:
-              selectedTimepoint.name,
-
-            date:
-              experiment_date
-
-          });
-
-
-          jsPsych.finishTrial();
-
-        }
-
+    selectedTimepointIndex =
+      Number(
+        data.response.timepoint
       );
+
+
+    selectedTimepoint =
+      TIMEPOINTS[
+        selectedTimepointIndex
+      ];
+
+
+    experiment_date =
+      new Date()
+        .toLocaleString(
+          "ja-JP"
+        );
+
+
+    document.documentElement.lang =
+      language === "en"
+      ?
+      "en"
+      :
+      "ja";
+
+
+    jsPsych.data.addProperties({
+
+      participant_id:
+        participant_id,
+
+      language:
+        language,
+
+      measurement_code:
+        selectedTimepoint.code,
+
+      measurement_label:
+        timepointName(
+          selectedTimepoint
+        ),
+
+      date:
+        experiment_date
+
+    });
 
   }
 
@@ -1906,23 +2112,44 @@ timeline.push({
 
 
         <h2>
-          2-back課題
+
+          ${t(
+            "2-back課題",
+            "2-back Task"
+          )}
+
         </h2>
 
 
         <p>
-          被験者ID：
+
+          ${t(
+            "被験者ID",
+            "Participant ID"
+          )}:
+
           <strong>
             ${participant_id}
           </strong>
+
         </p>
 
 
         <p>
-          測定時点：
+
+          ${t(
+            "測定時点",
+            "Measurement Time Point"
+          )}:
+
           <strong>
-            ${selectedTimepoint.name}
+
+            ${timepointName(
+              selectedTimepoint
+            )}
+
           </strong>
+
         </p>
 
 
@@ -1930,73 +2157,112 @@ timeline.push({
 
 
         <p>
-          画面中央に
-          アルファベットが
-          1文字ずつ表示されます。
+
+          ${t(
+            "画面中央にアルファベットが1文字ずつ表示されます。",
+            "Letters will appear one at a time in the center of the screen."
+          )}
+
         </p>
 
 
         <p>
 
-          現在表示されている文字が、
+          ${t(
+            "現在表示されている文字が、2つ前に表示された文字と同じかどうかを判断してください。",
+            "Decide whether the current letter is the same as the letter presented two trials earlier."
+          )}
+
+        </p>
+
+
+        <p>
 
           <strong>
-            2つ前に表示された文字と
-            同じかどうか
+
+            ${t(
+              "2つ前と同じ：",
+              "Same as two trials earlier:"
+            )}
+
           </strong>
 
-          を判断してください。
+          J ${t(
+            "キー",
+            "key"
+          )}
 
         </p>
 
 
         <p>
+
           <strong>
-            2つ前と同じ：
+
+            ${t(
+              "2つ前と違う：",
+              "Different from two trials earlier:"
+            )}
+
           </strong>
 
-          Jキー
+          F ${t(
+            "キー",
+            "key"
+          )}
+
         </p>
 
 
         <p>
-          <strong>
-            2つ前と違う：
-          </strong>
 
-          Fキー
+          ${t(
+            "文字が消えた後でも、次の文字が表示されるまでは回答できます。",
+            "You may respond after the letter disappears, as long as you respond before the next letter appears."
+          )}
+
         </p>
 
 
         <p>
-          文字が消えた後でも
-          次の文字が表示されるまでは
-          回答できます。
+
+          ${t(
+            "できるだけ速く、正確に回答してください。",
+            "Respond as quickly and accurately as possible."
+          )}
+
         </p>
 
 
         <p>
-          できるだけ速く、
-          正確に回答してください。
+
+          ${t(
+            "最初の2文字は比較対象がないため、キーを押さずに見てください。",
+            "For the first two letters, there is not yet a letter from two trials earlier to compare with, so please watch without pressing any key."
+          )}
+
         </p>
 
 
         <p>
-          最初の2文字は
-          比較する文字がまだないため、
-          キーを押さずに見てください。
+
+          ${t(
+            "まず20試行の練習を行います。",
+            "You will first complete 20 practice trials."
+          )}
+
         </p>
 
 
         <p>
-          まず20試行
-          練習します。
+
+          ${t(
+            "スペースキーを押してください。",
+            "Press the spacebar to continue."
+          )}
+
         </p>
 
-
-        <p>
-          スペースキーを押してください。
-        </p>
 
       </div>
 
@@ -2021,37 +2287,67 @@ timeline.push({
     jsPsychHtmlKeyboardResponse,
 
 
-  stimulus: `
+  stimulus:
+  function() {
 
-    <div class="text">
+    return `
 
-      <h2>
-        練習試行
-      </h2>
+      <div class="text">
 
-      <p>
-        これから20試行
-        練習します。
-      </p>
+        <h2>
 
-      <p>
-        2つ前と同じ：
-        <strong>Jキー</strong>
-      </p>
+          ${t(
+            "練習試行",
+            "Practice Trials"
+          )}
 
-      <p>
-        2つ前と違う：
-        <strong>Fキー</strong>
-      </p>
+        </h2>
 
-      <p>
-        スペースキーを押すと
-        始まります。
-      </p>
 
-    </div>
+        <p>
 
-  `,
+          ${t(
+            "これから20試行練習します。",
+            "You will now complete 20 practice trials."
+          )}
+
+        </p>
+
+
+        <p>
+
+          ${t(
+            "2つ前と同じ：Jキー",
+            "Same as two trials earlier: J key"
+          )}
+
+        </p>
+
+
+        <p>
+
+          ${t(
+            "2つ前と違う：Fキー",
+            "Different from two trials earlier: F key"
+          )}
+
+        </p>
+
+
+        <p>
+
+          ${t(
+            "スペースキーを押すと始まります。",
+            "Press the spacebar to begin."
+          )}
+
+        </p>
+
+      </div>
+
+    `;
+
+  },
 
 
   choices:
@@ -2145,47 +2441,81 @@ timeline.push({
       <div class="text">
 
         <h2>
-          練習終了
+
+          ${t(
+            "練習終了",
+            "Practice Complete"
+          )}
+
         </h2>
 
 
         <p>
-          練習の正答数：
+
+          ${t(
+            "練習の正答数",
+            "Correct responses in practice"
+          )}:
+
           ${correct}
           /
           ${practiceData.length}
+
         </p>
 
 
         <p>
-          練習の正答率：
+
+          ${t(
+            "練習の正答率",
+            "Practice accuracy"
+          )}:
+
           ${format(
             accuracy,
             1
           )}%
+
         </p>
 
 
         <p>
-          ここから本試行を
-          開始します。
+
+          ${t(
+            "ここから本試行を開始します。",
+            "The main task will now begin."
+          )}
+
         </p>
 
 
         <p>
-          本試行は
-          50試行を2回行います。
+
+          ${t(
+            "本試行は50試行を2回行います。",
+            "You will complete two blocks of 50 trials."
+          )}
+
         </p>
 
 
         <p>
-          1回目と2回目の間には
-          60秒間の休憩があります。
+
+          ${t(
+            "1回目と2回目の間には60秒間の休憩があります。",
+            "There will be a 60-second break between Block 1 and Block 2."
+          )}
+
         </p>
 
 
         <p>
-          スペースキーを押してください。
+
+          ${t(
+            "スペースキーを押してください。",
+            "Press the spacebar to continue."
+          )}
+
         </p>
 
       </div>
@@ -2211,41 +2541,77 @@ timeline.push({
     jsPsychHtmlKeyboardResponse,
 
 
-  stimulus: `
+  stimulus:
+  function() {
 
-    <div class="text">
+    return `
 
-      <h2>
-        本試行1
-      </h2>
+      <div class="text">
 
-      <p>
-        50試行行います。
-      </p>
+        <h2>
 
-      <p>
-        2つ前と同じ：
-        <strong>Jキー</strong>
-      </p>
+          ${t(
+            "本試行1",
+            "Main Block 1"
+          )}
 
-      <p>
-        2つ前と違う：
-        <strong>Fキー</strong>
-      </p>
+        </h2>
 
-      <p>
-        できるだけ速く、
-        正確に回答してください。
-      </p>
 
-      <p>
-        スペースキーを押すと
-        始まります。
-      </p>
+        <p>
 
-    </div>
+          ${t(
+            "50試行行います。",
+            "You will complete 50 trials."
+          )}
 
-  `,
+        </p>
+
+
+        <p>
+
+          ${t(
+            "2つ前と同じ：Jキー",
+            "Same as two trials earlier: J key"
+          )}
+
+        </p>
+
+
+        <p>
+
+          ${t(
+            "2つ前と違う：Fキー",
+            "Different from two trials earlier: F key"
+          )}
+
+        </p>
+
+
+        <p>
+
+          ${t(
+            "できるだけ速く、正確に回答してください。",
+            "Respond as quickly and accurately as possible."
+          )}
+
+        </p>
+
+
+        <p>
+
+          ${t(
+            "スペースキーを押すと始まります。",
+            "Press the spacebar to begin."
+          )}
+
+        </p>
+
+      </div>
+
+    `;
+
+  },
 
 
   choices:
@@ -2286,42 +2652,75 @@ timeline.push({
     jsPsychHtmlKeyboardResponse,
 
 
-  stimulus: `
+  stimulus:
+  function() {
 
-    <div class="text">
+    return `
 
-      <h2>
-        休憩
-      </h2>
+      <div class="text">
 
-      <p>
-        本試行1が終了しました。
-      </p>
+        <h2>
 
-      <p>
-        60秒間
-        休憩してください。
-      </p>
+          ${t(
+            "休憩",
+            "Break"
+          )}
 
-      <div
-        id="countdown"
-        class="countdown"
-      >
-        60
+        </h2>
+
+
+        <p>
+
+          ${t(
+            "本試行1が終了しました。",
+            "Main Block 1 is complete."
+          )}
+
+        </p>
+
+
+        <p>
+
+          ${t(
+            "60秒間休憩してください。",
+            "Please take a 60-second break."
+          )}
+
+        </p>
+
+
+        <div
+          id="countdown"
+          class="countdown"
+        >
+          60
+        </div>
+
+
+        <p>
+
+          ${t(
+            "秒",
+            "seconds"
+          )}
+
+        </p>
+
+
+        <p>
+
+          ${t(
+            "0秒になると自動的に次へ進みます。",
+            "The task will continue automatically when the countdown reaches 0."
+          )}
+
+        </p>
+
       </div>
 
-      <p>
-        秒
-      </p>
+    `;
 
-      <p>
-        0秒になると
-        自動的に次へ進みます。
-      </p>
-
-    </div>
-
-  `,
+  },
 
 
   choices:
@@ -2386,6 +2785,31 @@ timeline.push({
 
       );
 
+
+    window.nbackBreakTimer =
+      timer;
+
+  },
+
+
+  on_finish:
+  function() {
+
+
+    if (
+      window.nbackBreakTimer
+    ) {
+
+      clearInterval(
+        window.nbackBreakTimer
+      );
+
+
+      window.nbackBreakTimer =
+        null;
+
+    }
+
   }
 
 });
@@ -2401,38 +2825,77 @@ timeline.push({
     jsPsychHtmlKeyboardResponse,
 
 
-  stimulus: `
+  stimulus:
+  function() {
 
-    <div class="text">
+    return `
 
-      <h2>
-        本試行2
-      </h2>
+      <div class="text">
 
-      <p>
-        これから
-        2回目の50試行を
-        行います。
-      </p>
+        <h2>
 
-      <p>
-        2つ前と同じ：
-        <strong>Jキー</strong>
-      </p>
+          ${t(
+            "本試行2",
+            "Main Block 2"
+          )}
 
-      <p>
-        2つ前と違う：
-        <strong>Fキー</strong>
-      </p>
+        </h2>
 
-      <p>
-        スペースキーを押すと
-        始まります。
-      </p>
 
-    </div>
+        <p>
 
-  `,
+          ${t(
+            "これから2回目の50試行を行います。",
+            "You will now complete the second block of 50 trials."
+          )}
+
+        </p>
+
+
+        <p>
+
+          ${t(
+            "2つ前と同じ：Jキー",
+            "Same as two trials earlier: J key"
+          )}
+
+        </p>
+
+
+        <p>
+
+          ${t(
+            "2つ前と違う：Fキー",
+            "Different from two trials earlier: F key"
+          )}
+
+        </p>
+
+
+        <p>
+
+          ${t(
+            "できるだけ速く、正確に回答してください。",
+            "Respond as quickly and accurately as possible."
+          )}
+
+        </p>
+
+
+        <p>
+
+          ${t(
+            "スペースキーを押すと始まります。",
+            "Press the spacebar to begin."
+          )}
+
+        </p>
+
+      </div>
+
+    `;
+
+  },
 
 
   choices:
@@ -2486,23 +2949,44 @@ timeline.push({
       <div class="text">
 
         <h2>
-          【2-back課題 結果】
+
+          ${t(
+            "【2-back課題 結果】",
+            "2-back Task Results"
+          )}
+
         </h2>
 
 
         <p>
-          被験者ID：
+
+          ${t(
+            "被験者ID",
+            "Participant ID"
+          )}:
+
           <strong>
             ${participant_id}
           </strong>
+
         </p>
 
 
         <p>
-          測定時点：
+
+          ${t(
+            "測定時点",
+            "Measurement Time Point"
+          )}:
+
           <strong>
-            ${selectedTimepoint.name}
+
+            ${timepointName(
+              selectedTimepoint
+            )}
+
           </strong>
+
         </p>
 
 
@@ -2510,197 +2994,370 @@ timeline.push({
 
 
           <tr>
-            <td>総試行数</td>
-            <td>${r.total_trials}</td>
-          </tr>
-
-
-          <tr>
-            <td>正答数</td>
-            <td>${r.correct_count}</td>
-          </tr>
-
-
-          <tr>
-            <td>正答率</td>
 
             <td>
-              ${format(
-                r.accuracy*100,
-                1
-              )}%
+              ${t(
+                "総試行数",
+                "Total Trials"
+              )}
             </td>
+
+            <td>
+              ${r.total_trials}
+            </td>
+
           </tr>
 
 
           <tr>
+
+            <td>
+              ${t(
+                "正答数",
+                "Correct Responses"
+              )}
+            </td>
+
+            <td>
+              ${r.correct_count}
+            </td>
+
+          </tr>
+
+
+          <tr>
+
+            <td>
+              ${t(
+                "正答率",
+                "Accuracy"
+              )}
+            </td>
+
+            <td>
+
+              ${format(
+                r.accuracy * 100,
+                1
+              )}%
+
+            </td>
+
+          </tr>
+
+
+          <tr>
+
             <td colspan="2">
-              <strong>Target</strong>
+              <strong>
+                Target
+              </strong>
             </td>
+
           </tr>
 
 
           <tr>
-            <td>Target数</td>
-            <td>${r.target_count}</td>
-          </tr>
-
-
-          <tr>
-            <td>Hit数</td>
-            <td>${r.hit_count}</td>
-          </tr>
-
-
-          <tr>
-            <td>Miss数</td>
-            <td>${r.miss_count}</td>
-          </tr>
-
-
-          <tr>
-            <td>Hit rate</td>
 
             <td>
-              ${format(
-                r.hit_rate*100,
-                1
-              )}%
+              ${t(
+                "Target数",
+                "Target Trials"
+              )}
             </td>
-          </tr>
-
-
-          <tr>
-            <td>Miss rate</td>
 
             <td>
-              ${format(
-                r.miss_rate*100,
-                1
-              )}%
+              ${r.target_count}
             </td>
+
           </tr>
 
 
           <tr>
+
+            <td>
+              ${t(
+                "Hit数",
+                "Hits"
+              )}
+            </td>
+
+            <td>
+              ${r.hit_count}
+            </td>
+
+          </tr>
+
+
+          <tr>
+
+            <td>
+              ${t(
+                "Miss数",
+                "Misses"
+              )}
+            </td>
+
+            <td>
+              ${r.miss_count}
+            </td>
+
+          </tr>
+
+
+          <tr>
+
+            <td>
+              Hit rate
+            </td>
+
+            <td>
+
+              ${format(
+                r.hit_rate * 100,
+                1
+              )}%
+
+            </td>
+
+          </tr>
+
+
+          <tr>
+
+            <td>
+              Miss rate
+            </td>
+
+            <td>
+
+              ${format(
+                r.miss_rate * 100,
+                1
+              )}%
+
+            </td>
+
+          </tr>
+
+
+          <tr>
+
             <td colspan="2">
-              <strong>Non-target</strong>
+              <strong>
+                Non-target
+              </strong>
             </td>
+
           </tr>
 
 
           <tr>
-            <td>Non-target数</td>
-            <td>${r.nontarget_count}</td>
-          </tr>
-
-
-          <tr>
-            <td>Correct Rejection数</td>
-            <td>${r.correct_rejection_count}</td>
-          </tr>
-
-
-          <tr>
-            <td>False Alarm数</td>
-            <td>${r.false_alarm_count}</td>
-          </tr>
-
-
-          <tr>
-            <td>Correct Rejection rate</td>
 
             <td>
+              ${t(
+                "Non-target数",
+                "Non-target Trials"
+              )}
+            </td>
+
+            <td>
+              ${r.nontarget_count}
+            </td>
+
+          </tr>
+
+
+          <tr>
+
+            <td>
+              ${t(
+                "Correct Rejection数",
+                "Correct Rejections"
+              )}
+            </td>
+
+            <td>
+              ${r.correct_rejection_count}
+            </td>
+
+          </tr>
+
+
+          <tr>
+
+            <td>
+              ${t(
+                "False Alarm数",
+                "False Alarms"
+              )}
+            </td>
+
+            <td>
+              ${r.false_alarm_count}
+            </td>
+
+          </tr>
+
+
+          <tr>
+
+            <td>
+              Correct Rejection rate
+            </td>
+
+            <td>
+
               ${format(
-                r.correct_rejection_rate*100,
+                r.correct_rejection_rate * 100,
                 1
               )}%
+
             </td>
+
           </tr>
 
 
           <tr>
-            <td>False Alarm rate</td>
 
             <td>
+              False Alarm rate
+            </td>
+
+            <td>
+
               ${format(
-                r.false_alarm_rate*100,
+                r.false_alarm_rate * 100,
                 1
               )}%
+
             </td>
+
           </tr>
 
 
           <tr>
-            <td>d-prime（d′）</td>
 
             <td>
+              d-prime (d′)
+            </td>
+
+            <td>
+
               ${format(
                 r.dprime,
                 3
               )}
+
             </td>
+
           </tr>
 
 
           <tr>
-            <td>正答時平均RT</td>
 
             <td>
+
+              ${t(
+                "正答時平均RT",
+                "Mean RT for Correct Responses"
+              )}
+
+            </td>
+
+            <td>
+
               ${format(
                 r.mean_correct_rt,
                 1
               )}
               ms
+
             </td>
+
           </tr>
 
 
           <tr>
-            <td>Hit平均RT</td>
 
             <td>
+              ${t(
+                "Hit平均RT",
+                "Mean Hit RT"
+              )}
+            </td>
+
+            <td>
+
               ${format(
                 r.mean_hit_rt,
                 1
               )}
               ms
+
             </td>
+
           </tr>
 
 
           <tr>
-            <td>Correct Rejection平均RT</td>
 
             <td>
+
+              ${t(
+                "Correct Rejection平均RT",
+                "Mean Correct Rejection RT"
+              )}
+
+            </td>
+
+            <td>
+
               ${format(
                 r.mean_correct_rejection_rt,
                 1
               )}
               ms
+
             </td>
+
           </tr>
 
 
           <tr>
-            <td>RT標準偏差</td>
 
             <td>
+
+              ${t(
+                "RT標準偏差",
+                "RT Standard Deviation"
+              )}
+
+            </td>
+
+            <td>
+
               ${format(
                 r.sd_correct_rt,
                 1
               )}
               ms
+
             </td>
+
           </tr>
+
 
         </table>
 
 
         <p>
-          スペースキーを押すと
-          CSVファイルを保存して
-          課題を終了します。
+
+          ${t(
+            "スペースキーを押すとCSVファイルを保存して課題を終了します。",
+            "Press the spacebar to save the CSV file and finish the task."
+          )}
+
         </p>
 
       </div>
