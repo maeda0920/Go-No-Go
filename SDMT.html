@@ -8,16 +8,13 @@
 <title>SDMT Task</title>
 
 <script src="https://unpkg.com/jspsych@8.2.2"></script>
-
 <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
-
 <script src="https://unpkg.com/@jspsych/plugin-survey-html-form@2.1.0"></script>
 
 <link
   href="https://unpkg.com/jspsych@8.2.2/css/jspsych.css"
   rel="stylesheet"
->
-
+/>
 
 <style>
 
@@ -32,6 +29,7 @@ body {
   line-height: 1.7;
   max-width: 950px;
   margin: auto;
+  text-align: center;
 }
 
 .symbol {
@@ -56,13 +54,23 @@ body {
   padding: 7px 12px;
 }
 
+select,
+input {
+  font-size: 21px;
+  padding: 10px;
+  margin: 8px;
+}
+
+button {
+  font-size: 20px;
+  padding: 10px 24px;
+}
+
 </style>
 
 </head>
 
-
 <body></body>
-
 
 <script>
 
@@ -81,16 +89,9 @@ const N_FORMS = 18;
 
 const FORMS_PER_SESSION = 3;
 
-/*
-  このseedを変えない限り、
-  18フォームは同じものが再現される
-*/
 const MASTER_SEED = 20260825;
 
 
-/*
-  9種類の記号
-*/
 const SYMBOLS = [
   "◆",
   "■",
@@ -118,32 +119,38 @@ const TIMEPOINTS = [
 
   {
     code: "T1",
-    name: "介入前 Baseline"
+    ja: "介入前 Baseline",
+    en: "Pre-intervention Baseline"
   },
 
   {
     code: "T2",
-    name: "介入4週間後"
+    ja: "介入4週間後",
+    en: "Week 4 of Intervention"
   },
 
   {
     code: "T3",
-    name: "介入8週間後"
+    ja: "介入8週間後",
+    en: "Week 8 of Intervention"
   },
 
   {
     code: "T4",
-    name: "Washout後 Baseline"
+    ja: "Washout後 Baseline",
+    en: "Post-washout Baseline"
   },
 
   {
     code: "T5",
-    name: "Washout後4週間後"
+    ja: "Washout後4週間後",
+    en: "Week 4 After Post-washout Baseline"
   },
 
   {
     code: "T6",
-    name: "Washout後8週間後"
+    ja: "Washout後8週間後",
+    en: "Week 8 After Post-washout Baseline"
   }
 
 ];
@@ -152,6 +159,8 @@ const TIMEPOINTS = [
 /* =========================================================
    3. 変数
 ========================================================= */
+
+let language = "ja";
 
 let participant_id = "";
 
@@ -164,7 +173,6 @@ let selectedTimepoint = null;
 let participantSetOrder = [];
 
 let selectedSetNumber = 1;
-
 
 let currentBlock = 0;
 
@@ -180,7 +188,27 @@ let blockTrialNumber = 0;
 
 
 /* =========================================================
-   4. 乱数
+   4. 言語関数
+========================================================= */
+
+function t(ja, en) {
+
+  return language === "en"
+    ? en
+    : ja;
+}
+
+
+function timepointName(tp) {
+
+  return language === "en"
+    ? tp.en
+    : tp.ja;
+}
+
+
+/* =========================================================
+   5. Seed付き乱数
 ========================================================= */
 
 function mulberry32(seed) {
@@ -247,7 +275,7 @@ function seededShuffle(
 
 
 /* =========================================================
-   5. 被験者ID hash
+   6. 被験者ID hash
 ========================================================= */
 
 function hashString(text) {
@@ -276,7 +304,7 @@ function hashString(text) {
 
 
 /* =========================================================
-   6. 18種類の対応表
+   7. 18種類の対応表
 ========================================================= */
 
 function hammingDistance(
@@ -304,10 +332,6 @@ function hammingDistance(
 }
 
 
-/*
-  各フォームの対応関係が
-  互いにできるだけ異なるようにする
-*/
 function createForms() {
 
   const rng =
@@ -319,20 +343,22 @@ function createForms() {
 
   let attempts = 0;
 
+
   while (
-    permutations.length <
-      N_FORMS
+    permutations.length < N_FORMS
     &&
     attempts < 100000
   ) {
 
     attempts++;
 
+
     const candidate =
       seededShuffle(
         DIGITS,
         rng
       );
+
 
     const acceptable =
       permutations.every(
@@ -342,6 +368,7 @@ function createForms() {
             candidate
           ) >= 6
       );
+
 
     if (
       acceptable
@@ -355,12 +382,11 @@ function createForms() {
 
 
   if (
-    permutations.length <
-      N_FORMS
+    permutations.length < N_FORMS
   ) {
 
     throw new Error(
-      "18種類のフォーム生成に失敗しました。"
+      "Unable to generate 18 SDMT forms."
     );
   }
 
@@ -370,13 +396,16 @@ function createForms() {
 
       const map = {};
 
+
       SYMBOLS.forEach(
         (symbol,i) => {
 
           map[symbol] =
             digits[i];
+
         }
       );
+
 
       return {
 
@@ -385,7 +414,9 @@ function createForms() {
 
         map:
           map
+
       };
+
     }
   );
 }
@@ -396,7 +427,7 @@ const FORMS =
 
 
 /* =========================================================
-   7. 練習用対応表
+   8. 練習用対応表
 ========================================================= */
 
 const PRACTICE_MAP = {
@@ -415,12 +446,7 @@ const PRACTICE_MAP = {
 
 
 /* =========================================================
-   8. 刺激系列
-
-   3回で同じ基本系列を用いる。
-
-   対応表だけ変えることで、
-   刺激系列による難易度差を減らす。
+   9. 刺激系列
 ========================================================= */
 
 function createBalancedSequence(
@@ -432,6 +458,7 @@ function createBalancedSequence(
     mulberry32(seed);
 
   const sequence = [];
+
 
   while (
     sequence.length < length
@@ -448,6 +475,7 @@ function createBalancedSequence(
     );
   }
 
+
   return sequence.slice(
     0,
     length
@@ -455,9 +483,6 @@ function createBalancedSequence(
 }
 
 
-/*
-  90秒で十分余裕がある長さ
-*/
 const MAIN_SEQUENCE =
   createBalancedSequence(
     MASTER_SEED + 9999,
@@ -473,22 +498,8 @@ const PRACTICE_SEQUENCE =
 
 
 /* =========================================================
-   9. 被験者ごとのセット割付
+   10. 被験者ごとのフォーム割付
 ========================================================= */
-
-/*
-  18フォームを
-
-  Set1 = Form 1～3
-  Set2 = Form 4～6
-  ...
-  Set6 = Form16～18
-
-  に分ける。
-
-  被験者IDによって
-  測定時点との対応をずらす。
-*/
 
 function createParticipantSetOrder(
   participant
@@ -499,7 +510,9 @@ function createParticipantSetOrder(
       participant
     ) % 6;
 
+
   const order = [];
+
 
   for (
     let i = 0;
@@ -509,12 +522,12 @@ function createParticipantSetOrder(
 
     order.push(
       (
-        offset +
-        i
+        offset + i
       ) % 6
       + 1
     );
   }
+
 
   return order;
 }
@@ -535,23 +548,21 @@ function getFormIndex(
 
 
 /* =========================================================
-   10. 対応表HTML
+   11. 対応表表示
 ========================================================= */
 
 function keyTableHTML(map) {
 
-  const numberOrder =
-    [
-      "1","2","3",
-      "4","5","6",
-      "7","8","9"
-    ];
+  const numberOrder = [
+    "1","2","3",
+    "4","5","6",
+    "7","8","9"
+  ];
 
 
   const symbolOrder =
     numberOrder.map(
       num =>
-
         Object.keys(map)
           .find(
             sym =>
@@ -587,7 +598,6 @@ function keyTableHTML(map) {
         >
           ${symbol}
         </td>
-
       `;
     }
   );
@@ -610,7 +620,6 @@ function keyTableHTML(map) {
         >
           ${number}
         </td>
-
       `;
     }
   );
@@ -625,7 +634,7 @@ function keyTableHTML(map) {
 
 
 /* =========================================================
-   11. 統計
+   12. 統計
 ========================================================= */
 
 function mean(values) {
@@ -633,8 +642,10 @@ function mean(values) {
   if (
     values.length === 0
   ) {
+
     return NaN;
   }
+
 
   return values.reduce(
     (a,b) => a+b,
@@ -648,19 +659,22 @@ function median(values) {
   if (
     values.length === 0
   ) {
+
     return NaN;
   }
 
+
   const sorted =
-    [...values]
-      .sort(
-        (a,b) => a-b
-      );
+    [...values].sort(
+      (a,b) => a-b
+    );
+
 
   const middle =
     Math.floor(
       sorted.length / 2
     );
+
 
   if (
     sorted.length % 2 === 0
@@ -673,6 +687,7 @@ function median(values) {
     ) / 2;
   }
 
+
   return sorted[middle];
 }
 
@@ -682,11 +697,14 @@ function sd(values) {
   if (
     values.length < 2
   ) {
+
     return NaN;
   }
 
+
   const m =
     mean(values);
+
 
   return Math.sqrt(
 
@@ -705,20 +723,18 @@ function sd(values) {
     (
       values.length - 1
     )
+
   );
 }
 
 
 /* =========================================================
-   12. 結果計算
+   13. 結果計算
 ========================================================= */
 
 function calculateFromData(data) {
 
-  /*
-    実際にキー回答した試行だけ
-    SDMT回答数として扱う
-  */
+
   const responded =
     data.filter(
       d =>
@@ -764,16 +780,11 @@ function calculateFromData(data) {
       NaN;
 
 
-  /*
-    150～5000 msのみを
-    RT集計対象とする
-  */
   const allRT =
-    responded
-      .filter(
-        d =>
-          d.rt !== null
-      );
+    responded.filter(
+      d =>
+        d.rt !== null
+    );
 
 
   const validRTData =
@@ -796,9 +807,6 @@ function calculateFromData(data) {
     );
 
 
-  /*
-    正答RT
-  */
   const correctRT =
     validRTData
       .filter(
@@ -806,23 +814,28 @@ function calculateFromData(data) {
           d.correct === true
       )
       .map(
-        d =>
-          d.rt
+        d => d.rt
       );
 
 
   const meanRT =
-    mean(validRT);
+    mean(
+      validRT
+    );
 
 
   const medianRT =
-    median(validRT);
+    median(
+      validRT
+    );
 
 
   const minRT =
     validRT.length
     ?
-      Math.min(...validRT)
+      Math.min(
+        ...validRT
+      )
     :
       NaN;
 
@@ -830,13 +843,17 @@ function calculateFromData(data) {
   const maxRT =
     validRT.length
     ?
-      Math.max(...validRT)
+      Math.max(
+        ...validRT
+      )
     :
       NaN;
 
 
   const sdRT =
-    sd(validRT);
+    sd(
+      validRT
+    );
 
 
   const seRT =
@@ -857,7 +874,8 @@ function calculateFromData(data) {
     &&
     meanRT !== 0
     ?
-      sdRT / meanRT
+      sdRT /
+      meanRT
     :
       NaN;
 
@@ -874,28 +892,16 @@ function calculateFromData(data) {
     );
 
 
-  /*
-    標準SDMTに最も近い主要スコア
-    = 90秒間の正答数
-  */
   const rawScore =
     correctCount;
 
 
-  /*
-    補助指標：
-    1秒あたりの正答数
-  */
   const correctPerSecond =
     correctCount / 90;
 
 
-  /*
-    1分換算
-  */
   const correctPerMinute =
-    correctCount /
-    1.5;
+    correctCount / 1.5;
 
 
   return {
@@ -956,6 +962,7 @@ function calculateFromData(data) {
 
     correct_per_minute:
       correctPerMinute
+
   };
 }
 
@@ -1001,12 +1008,12 @@ function calculateOverallResults() {
 
 
 /* =========================================================
-   13. 表示
+   14. 数値表示
 ========================================================= */
 
 function formatNumber(
   x,
-  digits=1
+  digits = 1
 ) {
 
   if (
@@ -1029,7 +1036,7 @@ function formatNumber(
 
 
 /* =========================================================
-   14. jsPsych初期化
+   15. jsPsych初期化
 ========================================================= */
 
 const jsPsych =
@@ -1055,7 +1062,6 @@ const jsPsych =
       const average = {
 
         total_responses:
-
           (
             r1.total_responses
             +
@@ -1064,9 +1070,7 @@ const jsPsych =
             r3.total_responses
           ) / 3,
 
-
         correct_count:
-
           (
             r1.correct_count
             +
@@ -1075,9 +1079,7 @@ const jsPsych =
             r3.correct_count
           ) / 3,
 
-
         incorrect_count:
-
           (
             r1.incorrect_count
             +
@@ -1086,9 +1088,7 @@ const jsPsych =
             r3.incorrect_count
           ) / 3,
 
-
         accuracy:
-
           (
             r1.accuracy
             +
@@ -1097,9 +1097,7 @@ const jsPsych =
             r3.accuracy
           ) / 3,
 
-
         error_rate:
-
           (
             r1.error_rate
             +
@@ -1108,9 +1106,7 @@ const jsPsych =
             r3.error_rate
           ) / 3,
 
-
         mean_rt:
-
           (
             r1.mean_rt
             +
@@ -1119,9 +1115,7 @@ const jsPsych =
             r3.mean_rt
           ) / 3,
 
-
         median_rt:
-
           (
             r1.median_rt
             +
@@ -1130,9 +1124,7 @@ const jsPsych =
             r3.median_rt
           ) / 3,
 
-
         sd_rt:
-
           (
             r1.sd_rt
             +
@@ -1141,9 +1133,7 @@ const jsPsych =
             r3.sd_rt
           ) / 3,
 
-
         cv_rt:
-
           (
             r1.cv_rt
             +
@@ -1152,9 +1142,7 @@ const jsPsych =
             r3.cv_rt
           ) / 3,
 
-
         mean_correct_rt:
-
           (
             r1.mean_correct_rt
             +
@@ -1174,51 +1162,79 @@ const jsPsych =
 
 
       csv +=
-        "===== 基本情報 =====\n";
+        "===== 基本情報 / Basic Information =====\n";
 
 
       csv +=
-        "被験者ID," +
-        participant_id +
+        "被験者ID / Participant ID,"
+        +
+        participant_id
+        +
         "\n";
 
 
       csv +=
-        "測定時点コード," +
-        selectedTimepoint.code +
+        "言語 / Language,"
+        +
+        (
+          language === "en"
+          ?
+          "English"
+          :
+          "Japanese"
+        )
+        +
         "\n";
 
 
       csv +=
-        "測定時点," +
-        selectedTimepoint.name +
+        "測定時点コード / Time Point Code,"
+        +
+        selectedTimepoint.code
+        +
         "\n";
 
 
       csv +=
-        "使用セット," +
-        selectedSetNumber +
+        "測定時点 / Measurement Time Point,"
+        +
+        timepointName(
+          selectedTimepoint
+        )
+        +
         "\n";
 
 
       csv +=
-        "被験者セット順," +
-        participantSetOrder.join("-") +
+        "使用セット / Set,"
+        +
+        selectedSetNumber
+        +
         "\n";
 
 
       csv +=
-        "実施日時," +
-        start_time +
+        "被験者セット順 / Set Order,"
+        +
+        participantSetOrder.join("-")
+        +
         "\n";
 
 
       csv +=
-        "本試行時間,90秒×3回\n";
+        "実施日時 / Date and Time,"
+        +
+        start_time
+        +
+        "\n";
 
 
       csv +=
-        "ブロック間休憩,60秒\n";
+        "本試行時間 / Main Trial Duration,90 seconds × 3\n";
+
+
+      csv +=
+        "ブロック間休憩 / Break,60 seconds\n";
 
 
       /* ===================================================
@@ -1230,12 +1246,10 @@ const jsPsych =
 
 
       csv +=
-
-        "被験者ID,測定時点,block,form,trial_number,symbol,correct_response,response,correct,rt_ms\n";
+        "Participant_ID,Timepoint,Block,Form,Trial_Number,Symbol,Correct_Response,Response,Correct,RT_ms\n";
 
 
       const allData =
-
         jsPsych.data
           .get()
           .filter({
@@ -1256,7 +1270,8 @@ const jsPsych =
 
             d.block,
 
-            "F" +
+            "F"
+            +
             String(
               d.form_number
             ).padStart(
@@ -1289,12 +1304,11 @@ const jsPsych =
       =================================================== */
 
       csv +=
-        "\n===== 各回・合計・平均 =====\n";
+        "\n===== 各回・合計・平均 / Summary =====\n";
 
 
       csv +=
-
-        "区分,フォーム,総回答数,正答数,誤答数,SDMT raw score,正答率(%),誤答率(%),有効RT数,除外RT数,平均RT(ms),中央値RT(ms),最小RT(ms),最大RT(ms),RT標準偏差(ms),RT標準誤差(ms),RT CV,正答時平均RT(ms),正答時RT SD(ms),正答数/秒,正答数/分\n";
+        "Section,Form,Total_Responses,Correct,Incorrect,SDMT_Raw_Score,Accuracy_Percent,Error_Rate_Percent,Valid_RT_Count,Excluded_RT_Count,Mean_RT_ms,Median_RT_ms,Min_RT_ms,Max_RT_ms,RT_SD_ms,RT_SE_ms,RT_CV,Mean_Correct_RT_ms,Correct_RT_SD_ms,Correct_Per_Second,Correct_Per_Minute\n";
 
 
       function addRow(
@@ -1423,34 +1437,49 @@ const jsPsych =
 
 
       addRow(
-        "本試行1回目",
-        "F" +
-        String(form1)
-          .padStart(2,"0"),
+        "Main Trial 1",
+        "F"
+        +
+        String(
+          form1
+        ).padStart(
+          2,
+          "0"
+        ),
         r1
       );
 
 
       addRow(
-        "本試行2回目",
-        "F" +
-        String(form2)
-          .padStart(2,"0"),
+        "Main Trial 2",
+        "F"
+        +
+        String(
+          form2
+        ).padStart(
+          2,
+          "0"
+        ),
         r2
       );
 
 
       addRow(
-        "本試行3回目",
-        "F" +
-        String(form3)
-          .padStart(2,"0"),
+        "Main Trial 3",
+        "F"
+        +
+        String(
+          form3
+        ).padStart(
+          2,
+          "0"
+        ),
         r3
       );
 
 
       addRow(
-        "3回合計",
+        "3-Trial Total",
         "",
         overall
       );
@@ -1458,7 +1487,8 @@ const jsPsych =
 
       csv += [
 
-        "3回平均",
+        "3-Trial Mean",
+
         "",
 
         formatNumber(
@@ -1553,17 +1583,14 @@ const jsPsych =
 
       const blob =
         new Blob(
-
           [
             bom,
             csv
           ],
-
           {
             type:
               "text/csv;charset=utf-8;"
           }
-
         );
 
 
@@ -1585,13 +1612,13 @@ const jsPsych =
 
       link.download =
 
-        participant_id +
-
-        "_" +
-
-        selectedTimepoint.code +
-
-        "_SDMT_3回結果.csv";
+        participant_id
+        +
+        "_"
+        +
+        selectedTimepoint.code
+        +
+        "_SDMT_3results.csv";
 
 
       document.body
@@ -1619,14 +1646,14 @@ const jsPsych =
 
 
 /* =========================================================
-   15. Timeline
+   16. Timeline
 ========================================================= */
 
 const timeline = [];
 
 
 /* =========================================================
-   16. ID・測定時点
+   17. 言語・ID・測定時点
 ========================================================= */
 
 timeline.push({
@@ -1634,65 +1661,88 @@ timeline.push({
   type:
     jsPsychSurveyHtmlForm,
 
+
   html: `
 
     <div class="text">
 
-      <h2>
-        SDMT課題
-      </h2>
+      <h1>
+        SDMT
+      </h1>
+
 
       <p>
-        被験者IDを入力してください。
+        <strong>
+          言語 / Language
+        </strong>
       </p>
+
+
+      <select
+        name="language"
+        required
+      >
+
+        <option value="ja">
+          日本語
+        </option>
+
+        <option value="en">
+          English
+        </option>
+
+      </select>
+
+
+      <p>
+        <strong>
+          被験者ID / Participant ID
+        </strong>
+      </p>
+
 
       <input
         name="participant_id"
         type="text"
+        placeholder="01 / 001"
         required
-        style="
-          font-size:22px;
-          padding:10px;
-        "
       >
 
 
       <p>
-        測定時点を選択してください。
+        <strong>
+          測定時点 / Measurement Time Point
+        </strong>
       </p>
 
 
       <select
         name="timepoint"
         required
-        style="
-          font-size:21px;
-          padding:10px;
-        "
       >
 
         <option value="0">
-          介入前 Baseline
+          T1：介入前 Baseline / Pre-intervention Baseline
         </option>
 
         <option value="1">
-          介入4週間後
+          T2：介入4週間後 / Week 4 of Intervention
         </option>
 
         <option value="2">
-          介入8週間後
+          T3：介入8週間後 / Week 8 of Intervention
         </option>
 
         <option value="3">
-          Washout後 Baseline
+          T4：Washout後 Baseline / Post-washout Baseline
         </option>
 
         <option value="4">
-          Washout後4週間後
+          T5：Washout後4週間後 / Week 4 After Post-washout Baseline
         </option>
 
         <option value="5">
-          Washout後8週間後
+          T6：Washout後8週間後 / Week 8 After Post-washout Baseline
         </option>
 
       </select>
@@ -1701,11 +1751,18 @@ timeline.push({
 
   `,
 
+
   button_label:
-    "次へ",
+    "開始 / Start",
+
 
   on_finish:
   function(data) {
+
+
+    language =
+      data.response.language;
+
 
     participant_id =
       String(
@@ -1743,19 +1800,32 @@ timeline.push({
           "ja-JP"
         );
 
+
+    /*
+      HTMLのlang属性も切り替える
+    */
+
+    document.documentElement.lang =
+      language === "en"
+      ?
+      "en"
+      :
+      "ja";
+
   }
 
 });
 
 
 /* =========================================================
-   17. 説明
+   18. 説明
 ========================================================= */
 
 timeline.push({
 
   type:
     jsPsychHtmlKeyboardResponse,
+
 
   stimulus:
   function() {
@@ -1765,63 +1835,98 @@ timeline.push({
       <div class="text">
 
         <h1>
-          SDMT課題
+          SDMT
         </h1>
 
 
         <p>
-          画面上部の
-          記号と数字の対応表を見ながら、
-          中央に表示される記号に対応する
-          数字キーを押してください。
-        </p>
-
-
-        <p>
-          回答にはキーボードの
+          ${t(
+            "被験者ID",
+            "Participant ID"
+          )}:
           <strong>
-            1～9
+            ${participant_id}
           </strong>
-          を使用します。
         </p>
 
 
         <p>
-          本試行は
+          ${t(
+            "測定時点",
+            "Measurement Time Point"
+          )}:
           <strong>
-            90秒間 × 3回
+            ${timepointName(
+              selectedTimepoint
+            )}
           </strong>
-          行います。
+        </p>
+
+
+        <hr>
+
+
+        <p>
+          ${t(
+            "画面上部の記号と数字の対応表を見ながら、中央に表示される記号に対応する数字キーを押してください。",
+            "Using the symbol–digit key shown at the top of the screen, press the number key that corresponds to the symbol displayed in the center."
+          )}
         </p>
 
 
         <p>
-          1回目と2回目の間、
-          2回目と3回目の間には
-          60秒間の休憩があります。
+          ${t(
+            "回答にはキーボードの1～9を使用します。",
+            "Use the number keys 1–9 to respond."
+          )}
         </p>
 
 
         <p>
-          各回で
-          記号と数字の対応関係は変わります。
+          ${t(
+            "本試行は90秒間 × 3回行います。",
+            "The main task consists of three 90-second trials."
+          )}
         </p>
 
 
         <p>
-          できるだけ速く、
-          正確に回答してください。
+          ${t(
+            "1回目と2回目の間、2回目と3回目の間には60秒間の休憩があります。",
+            "There will be a 60-second break between Trials 1 and 2 and between Trials 2 and 3."
+          )}
         </p>
 
 
         <p>
-          最初に10試行
-          練習を行います。
+          ${t(
+            "各回で記号と数字の対応関係は変わります。",
+            "The symbol–digit mapping will change for each trial."
+          )}
         </p>
 
 
         <p>
-          スペースキーを押してください。
+          ${t(
+            "できるだけ速く、正確に回答してください。",
+            "Respond as quickly and accurately as possible."
+          )}
+        </p>
+
+
+        <p>
+          ${t(
+            "最初に10試行の練習を行います。",
+            "You will first complete 10 practice trials."
+          )}
+        </p>
+
+
+        <p>
+          ${t(
+            "スペースキーを押してください。",
+            "Press the spacebar to continue."
+          )}
         </p>
 
       </div>
@@ -1830,6 +1935,7 @@ timeline.push({
 
   },
 
+
   choices:
     [" "]
 
@@ -1837,7 +1943,7 @@ timeline.push({
 
 
 /* =========================================================
-   18. 練習
+   19. 練習開始
 ========================================================= */
 
 timeline.push({
@@ -1845,30 +1951,48 @@ timeline.push({
   type:
     jsPsychHtmlKeyboardResponse,
 
-  stimulus: `
 
-    <div class="text">
+  stimulus:
+  function() {
 
-      <h2>
-        練習試行
-      </h2>
+    return `
 
-      ${keyTableHTML(
-        PRACTICE_MAP
-      )}
+      <div class="text">
 
-      <p>
-        まず10試行練習します。
-      </p>
+        <h2>
+          ${t(
+            "練習試行",
+            "Practice Trials"
+          )}
+        </h2>
 
-      <p>
-        スペースキーを押すと
-        始まります。
-      </p>
 
-    </div>
+        ${keyTableHTML(
+          PRACTICE_MAP
+        )}
 
-  `,
+
+        <p>
+          ${t(
+            "まず10試行練習します。",
+            "You will first complete 10 practice trials."
+          )}
+        </p>
+
+
+        <p>
+          ${t(
+            "スペースキーを押すと始まります。",
+            "Press the spacebar to begin."
+          )}
+        </p>
+
+      </div>
+
+    `;
+
+  },
+
 
   choices:
     [" "]
@@ -1877,7 +2001,7 @@ timeline.push({
 
 
 /* =========================================================
-   19. 練習trial
+   20. 練習Trial
 ========================================================= */
 
 function createPracticeTrial(
@@ -1896,22 +2020,31 @@ function createPracticeTrial(
       jsPsychHtmlKeyboardResponse,
 
 
-    stimulus: `
+    stimulus:
+    function() {
 
-      ${keyTableHTML(
-        PRACTICE_MAP
-      )}
+      return `
 
-      <div class="symbol">
-        ${symbol}
-      </div>
+        ${keyTableHTML(
+          PRACTICE_MAP
+        )}
 
-      <p>
-        対応する数字キーを
-        押してください
-      </p>
 
-    `,
+        <div class="symbol">
+          ${symbol}
+        </div>
+
+
+        <p>
+          ${t(
+            "対応する数字キーを押してください。",
+            "Press the corresponding number key."
+          )}
+        </p>
+
+      `;
+
+    },
 
 
     choices:
@@ -1953,11 +2086,9 @@ function createPracticeTrial(
 }
 
 
-/*
-  標準SDMTの
-  「10項目を指導下で実施」に近づけるため、
-  練習では正誤を提示する。
-*/
+/* =========================================================
+   21. 練習Feedback
+========================================================= */
 
 function createPracticeFeedback() {
 
@@ -1966,8 +2097,10 @@ function createPracticeFeedback() {
     type:
       jsPsychHtmlKeyboardResponse,
 
+
     stimulus:
     function() {
+
 
       const last =
 
@@ -1990,12 +2123,16 @@ function createPracticeFeedback() {
           <div class="text">
 
             <h2>
-              正解です
+              ${t(
+                "正解です",
+                "Correct"
+              )}
             </h2>
 
           </div>
 
         `;
+
       }
 
 
@@ -2004,9 +2141,10 @@ function createPracticeFeedback() {
         <div class="text">
 
           <h2>
-            正解は
-            ${last.correct_response}
-            です
+            ${t(
+              `正解は ${last.correct_response} です`,
+              `The correct answer is ${last.correct_response}`
+            )}
           </h2>
 
         </div>
@@ -2024,6 +2162,7 @@ function createPracticeFeedback() {
       500
 
   };
+
 }
 
 
@@ -2037,14 +2176,16 @@ for (
     createPracticeTrial(i)
   );
 
+
   timeline.push(
     createPracticeFeedback()
   );
+
 }
 
 
 /* =========================================================
-   20. 練習終了
+   22. 練習終了
 ========================================================= */
 
 timeline.push({
@@ -2052,30 +2193,51 @@ timeline.push({
   type:
     jsPsychHtmlKeyboardResponse,
 
-  stimulus: `
 
-    <div class="text">
+  stimulus:
+  function() {
 
-      <h2>
-        練習終了
-      </h2>
+    return `
 
-      <p>
-        ここから本試行を開始します。
-      </p>
+      <div class="text">
 
-      <p>
-        本試行は
-        90秒間 × 3回です。
-      </p>
+        <h2>
+          ${t(
+            "練習終了",
+            "Practice Complete"
+          )}
+        </h2>
 
-      <p>
-        スペースキーを押してください。
-      </p>
 
-    </div>
+        <p>
+          ${t(
+            "ここから本試行を開始します。",
+            "The main task will now begin."
+          )}
+        </p>
 
-  `,
+
+        <p>
+          ${t(
+            "本試行は90秒間 × 3回です。",
+            "You will complete three 90-second main trials."
+          )}
+        </p>
+
+
+        <p>
+          ${t(
+            "スペースキーを押してください。",
+            "Press the spacebar to continue."
+          )}
+        </p>
+
+      </div>
+
+    `;
+
+  },
+
 
   choices:
     [" "]
@@ -2084,7 +2246,7 @@ timeline.push({
 
 
 /* =========================================================
-   21. Main trial
+   23. Main Trial
 ========================================================= */
 
 function createSDMTMainTrial() {
@@ -2098,13 +2260,6 @@ function createSDMTMainTrial() {
     stimulus:
     function() {
 
-      /*
-        MAIN_SEQUENCEは各Blockで
-        0から使用する。
-
-        3回の刺激系列を同じにして
-        難易度を揃える。
-      */
 
       const symbol =
 
@@ -2117,11 +2272,6 @@ function createSDMTMainTrial() {
       currentSequenceIndex++;
 
 
-      /*
-        このtrialで使用した記号を
-        trial objectに保存
-      */
-
       window.currentSDMTSymbol =
         symbol;
 
@@ -2132,16 +2282,23 @@ function createSDMTMainTrial() {
           currentMap
         )}
 
+
         <div class="symbol">
           ${symbol}
         </div>
 
+
         <p style="font-size:20px;">
-          対応する数字キーを
-          押してください
+
+          ${t(
+            "対応する数字キーを押してください。",
+            "Press the corresponding number key."
+          )}
+
         </p>
 
       `;
+
     },
 
 
@@ -2149,20 +2306,16 @@ function createSDMTMainTrial() {
       DIGITS,
 
 
-    /*
-      残り時間を上限にする。
-
-      これにより90秒になったら、
-      回答を待ち続けず終了する。
-    */
-
     trial_duration:
     function() {
+
 
       const remaining =
 
         MAIN_DURATION_MS
+
         -
+
         (
           performance.now()
           -
@@ -2174,6 +2327,7 @@ function createSDMTMainTrial() {
         1,
         remaining
       );
+
     },
 
 
@@ -2183,6 +2337,7 @@ function createSDMTMainTrial() {
 
     data:
     function() {
+
 
       blockTrialNumber++;
 
@@ -2221,10 +2376,6 @@ function createSDMTMainTrial() {
     on_finish:
     function(data) {
 
-      /*
-        90秒到達時の無反応trialは
-        回答数には含めない
-      */
 
       if (
         data.response === null
@@ -2255,7 +2406,7 @@ function createSDMTMainTrial() {
 
 
 /* =========================================================
-   22. 休憩
+   24. 休憩
 ========================================================= */
 
 function createBreakScreen(
@@ -2268,43 +2419,73 @@ function createBreakScreen(
       jsPsychHtmlKeyboardResponse,
 
 
-    stimulus: `
+    stimulus:
+    function() {
 
-      <div class="text">
+      return `
 
-        <h2>
-          本試行 ${blockNumber} 回目終了
-        </h2>
+        <div class="text">
 
-        <p>
-          次は本試行
-          ${blockNumber + 1}
-          回目です。
-        </p>
+          <h2>
 
-        <p>
-          1分間休憩してください。
-        </p>
+            ${t(
+              `本試行 ${blockNumber} 回目終了`,
+              `Main Trial ${blockNumber} Complete`
+            )}
 
-        <div
-          id="countdown"
-          class="countdown"
-        >
-          60
+          </h2>
+
+
+          <p>
+
+            ${t(
+              `次は本試行 ${blockNumber + 1} 回目です。`,
+              `Next: Main Trial ${blockNumber + 1}.`
+            )}
+
+          </p>
+
+
+          <p>
+
+            ${t(
+              "1分間休憩してください。",
+              "Please take a 1-minute break."
+            )}
+
+          </p>
+
+
+          <div
+            id="countdown"
+            class="countdown"
+          >
+            60
+          </div>
+
+
+          <p>
+            ${t(
+              "秒",
+              "seconds"
+            )}
+          </p>
+
+
+          <p>
+
+            ${t(
+              "60秒後に自動的に次の本試行へ進みます。",
+              "The next main trial will begin automatically after 60 seconds."
+            )}
+
+          </p>
+
         </div>
 
-        <p>
-          秒
-        </p>
+      `;
 
-        <p>
-          60秒後に
-          自動的に次の本試行へ進みます。
-        </p>
-
-      </div>
-
-    `,
+    },
 
 
     choices:
@@ -2318,13 +2499,16 @@ function createBreakScreen(
     on_load:
     function() {
 
+
       let remaining =
         60;
 
 
       const timer =
+
         setInterval(
           function() {
+
 
             remaining--;
 
@@ -2371,7 +2555,7 @@ function createBreakScreen(
 
 
 /* =========================================================
-   23. Main block
+   25. Main Block
 ========================================================= */
 
 function addMainBlock(
@@ -2379,26 +2563,27 @@ function addMainBlock(
 ) {
 
 
-  /*
-    Form設定
-  */
-
   timeline.push({
 
     type:
       jsPsychHtmlKeyboardResponse,
 
+
     stimulus:
       "",
+
 
     choices:
       "NO_KEYS",
 
+
     trial_duration:
       1,
 
+
     on_start:
     function() {
+
 
       currentBlock =
         blockNumber;
@@ -2424,11 +2609,6 @@ function addMainBlock(
         form.map;
 
 
-      /*
-        3回とも
-        同じ系列の先頭から開始
-      */
-
       currentSequenceIndex =
         0;
 
@@ -2441,16 +2621,11 @@ function addMainBlock(
   });
 
 
-  /*
-    対応表確認画面
-
-    各フォームで同じ条件にする。
-  */
-
   timeline.push({
 
     type:
       jsPsychHtmlKeyboardResponse,
+
 
     stimulus:
     function() {
@@ -2460,30 +2635,57 @@ function addMainBlock(
         <div class="text">
 
           <h2>
-            本試行 ${blockNumber} 回目
+
+            ${t(
+              `本試行 ${blockNumber} 回目`,
+              `Main Trial ${blockNumber}`
+            )}
+
           </h2>
 
+
           <p>
-            この回では
-            以下の対応表を使用します。
+
+            ${t(
+              "この回では以下の対応表を使用します。",
+              "Use the following symbol–digit key for this trial."
+            )}
+
           </p>
+
 
           ${keyTableHTML(
             currentMap
           )}
 
-          <p>
-            本試行は90秒間です。
-          </p>
 
           <p>
-            できるだけ速く、
-            正確に回答してください。
+
+            ${t(
+              "本試行は90秒間です。",
+              "This trial lasts 90 seconds."
+            )}
+
           </p>
 
+
           <p>
-            スペースキーを押すと
-            開始します。
+
+            ${t(
+              "できるだけ速く、正確に回答してください。",
+              "Respond as quickly and accurately as possible."
+            )}
+
+          </p>
+
+
+          <p>
+
+            ${t(
+              "スペースキーを押すと開始します。",
+              "Press the spacebar to start."
+            )}
+
           </p>
 
         </div>
@@ -2508,10 +2710,6 @@ function addMainBlock(
   });
 
 
-  /*
-    90秒間繰り返し
-  */
-
   timeline.push({
 
     timeline: [
@@ -2521,6 +2719,7 @@ function addMainBlock(
 
     loop_function:
     function() {
+
 
       const elapsed =
 
@@ -2539,10 +2738,6 @@ function addMainBlock(
   });
 
 
-  /*
-    Block1・2の後のみ休憩
-  */
-
   if (
     blockNumber < 3
   ) {
@@ -2552,6 +2747,7 @@ function addMainBlock(
         blockNumber
       )
     );
+
   }
 
 }
@@ -2565,7 +2761,7 @@ addMainBlock(3);
 
 
 /* =========================================================
-   24. 結果表示
+   26. 結果表示
 ========================================================= */
 
 timeline.push({
@@ -2587,13 +2783,11 @@ timeline.push({
     const r3 =
       calculateBlockResults(3);
 
-
     const overall =
       calculateOverallResults();
 
 
     const averageResponses =
-
       (
         r1.total_responses
         +
@@ -2604,7 +2798,6 @@ timeline.push({
 
 
     const averageCorrect =
-
       (
         r1.correct_count
         +
@@ -2615,7 +2808,6 @@ timeline.push({
 
 
     const averageIncorrect =
-
       (
         r1.incorrect_count
         +
@@ -2626,7 +2818,6 @@ timeline.push({
 
 
     const averageAccuracy =
-
       (
         r1.accuracy
         +
@@ -2637,7 +2828,6 @@ timeline.push({
 
 
     const averageRT =
-
       (
         r1.mean_rt
         +
@@ -2648,7 +2838,6 @@ timeline.push({
 
 
     const averageRTSD =
-
       (
         r1.sd_rt
         +
@@ -2663,32 +2852,83 @@ timeline.push({
       <div class="text">
 
         <h2>
-          【SDMT課題 結果】
+
+          ${t(
+            "【SDMT課題 結果】",
+            "SDMT Task Results"
+          )}
+
         </h2>
+
+
+        <p>
+
+          ${t(
+            "被験者ID",
+            "Participant ID"
+          )}:
+
+          <strong>
+            ${participant_id}
+          </strong>
+
+        </p>
+
+
+        <p>
+
+          ${t(
+            "測定時点",
+            "Measurement Time Point"
+          )}:
+
+          <strong>
+            ${timepointName(
+              selectedTimepoint
+            )}
+          </strong>
+
+        </p>
 
 
         <table class="result-table">
 
+
           <tr>
 
             <th>
-              指標
+              ${t(
+                "指標",
+                "Measure"
+              )}
             </th>
 
             <th>
-              1回目
+              ${t(
+                "1回目",
+                "Trial 1"
+              )}
             </th>
 
             <th>
-              2回目
+              ${t(
+                "2回目",
+                "Trial 2"
+              )}
             </th>
 
             <th>
-              3回目
+              ${t(
+                "3回目",
+                "Trial 3"
+              )}
             </th>
 
             <th>
-              3回平均
+              ${t(
+                "3回平均",
+                "3-Trial Mean"
+              )}
             </th>
 
           </tr>
@@ -2697,7 +2937,10 @@ timeline.push({
           <tr>
 
             <td>
-              総回答数
+              ${t(
+                "総回答数",
+                "Total Responses"
+              )}
             </td>
 
             <td>
@@ -2725,8 +2968,12 @@ timeline.push({
           <tr>
 
             <td>
-              正答数
-              （SDMT raw score）
+
+              ${t(
+                "正答数（SDMT raw score）",
+                "Correct Responses (SDMT Raw Score)"
+              )}
+
             </td>
 
             <td>
@@ -2754,7 +3001,12 @@ timeline.push({
           <tr>
 
             <td>
-              誤答数
+
+              ${t(
+                "誤答数",
+                "Incorrect Responses"
+              )}
+
             </td>
 
             <td>
@@ -2782,7 +3034,12 @@ timeline.push({
           <tr>
 
             <td>
-              正答率
+
+              ${t(
+                "正答率",
+                "Accuracy"
+              )}
+
             </td>
 
             <td>
@@ -2819,7 +3076,12 @@ timeline.push({
           <tr>
 
             <td>
-              平均RT
+
+              ${t(
+                "平均RT",
+                "Mean RT"
+              )}
+
             </td>
 
             <td>
@@ -2856,7 +3118,12 @@ timeline.push({
           <tr>
 
             <td>
-              RT標準偏差
+
+              ${t(
+                "RT標準偏差",
+                "RT Standard Deviation"
+              )}
+
             </td>
 
             <td>
@@ -2889,20 +3156,31 @@ timeline.push({
 
           </tr>
 
+
         </table>
 
 
         <p>
-          3回合計正答数：
+
+          ${t(
+            "3回合計正答数",
+            "Total Correct Responses Across the Three Trials"
+          )}:
+
           <strong>
             ${overall.correct_count}
           </strong>
+
         </p>
 
 
         <p>
-          スペースキーを押すと
-          CSVを保存して終了します。
+
+          ${t(
+            "スペースキーを押すとCSVを保存して終了します。",
+            "Press the spacebar to save the CSV file and finish."
+          )}
+
         </p>
 
       </div>
@@ -2919,13 +3197,12 @@ timeline.push({
 
 
 /* =========================================================
-   25. 実行
+   27. 実行
 ========================================================= */
 
 jsPsych.run(
   timeline
 );
-
 
 </script>
 
