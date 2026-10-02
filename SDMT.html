@@ -1214,9 +1214,9 @@ const jsPsych =
 
 
       csv +=
-        "被験者セット順 / Set Order,"
+        "フォーム構成 / Form Assignment,"
         +
-        participantSetOrder.join("-")
+        "Trial 1=F01; Trial 2=F02; Trial 3=F03"
         +
         "\n";
 
@@ -1782,16 +1782,20 @@ timeline.push({
       ];
 
 
-    participantSetOrder =
-      createParticipantSetOrder(
-        participant_id
-      );
+    /*
+      SDMTフォーム割付
+      ----------------
+      全被験者・全測定時点で同一の3フォームを使用する。
+      本試行1 = Form 1
+      本試行2 = Form 2
+      本試行3 = Form 3
 
+      測定時点（T1～T6）は記録用として保持し、
+      フォーム割付には使用しない。
+    */
+    participantSetOrder = [1,1,1,1,1,1];
 
-    selectedSetNumber =
-      participantSetOrder[
-        selectedTimepointIndex
-      ];
+    selectedSetNumber = 1;
 
 
     start_time =
