@@ -2106,25 +2106,19 @@ function showParticipantScreen() {
           ];
 
 
+        /*
+          全被験者・全測定時点で同じ3フォームを使用する。
+          1回目 = Form 1、2回目 = Form 2、3回目 = Form 3。
+          被験者ID・測定時点はフォーム割付に使用しない。
+        */
         participantSetOrder =
-
-          createParticipantSetOrder(
-            participantID
-          );
-
+          [1,1,1,1,1,1];
 
         selectedSetNumber =
-
-          participantSetOrder[
-            selectedTimepointIndex
-          ];
-
+          1;
 
         currentSessionForms =
-
-          getFormsForSession(
-            selectedSetNumber
-          );
+          [0,1,2];
 
 
         sessionStartTime =
@@ -3057,6 +3051,21 @@ function startTask(config) {
     0;
 
 
+  /*
+    Apple Pencilが画面から離れている時間を記録する。
+    各要素:
+      lift_number
+      start_elapsed_ms
+      end_elapsed_ms
+      duration_ms
+  */
+  let penLiftStart =
+    null;
+
+  let penLiftDurations =
+    [];
+
+
   let totalDistance =
     0;
 
@@ -3940,6 +3949,21 @@ canvas.addEventListener(
 
 
       /*
+        Pointer CaptureでApple Pencilのイベントを安定して取得
+      */
+      try {
+
+        canvas.setPointerCapture(
+          e.pointerId
+        );
+
+      }
+      catch (error) {
+        // captureできない環境でも課題は継続
+      }
+
+
+      /*
         接触開始時刻も
         完全に同じtimestamp
       */
@@ -4006,50 +4030,76 @@ canvas.addEventListener(
 
     /* =====================================================
        離筆後の再開
+
+       ・直前の正しい円に戻る必要はない
+       ・Apple Pencilを置いた現在位置から描画を再開する
+       ・誤った円上から再開した場合はエラーとして記録するが、
+         描画自体は停止しない
     ===================================================== */
 
 
-    const previousIndex =
-
-      expectedIndex - 1;
+    const resumeTimestamp =
+      performance.now();
 
 
     /*
-      直前に正しく到達した円から
-      再開させる
+      直前の離筆時間を確定
     */
-
     if (
-
-      previousIndex >= 0
-
-      &&
-
-      targetIndex !== previousIndex
-
+      penLiftStart !== null
     ) {
 
+      const liftDuration =
+        resumeTimestamp
+        -
+        penLiftStart;
 
-      const message =
+      const liftRecord = {
+        lift_number:
+          penLiftCount,
 
-        document.getElementById(
-          "taskMessage"
-        );
+        start_elapsed_ms:
+          penLiftStart
+          -
+          taskStart,
+
+        end_elapsed_ms:
+          resumeTimestamp
+          -
+          taskStart,
+
+        duration_ms:
+          liftDuration
+      };
+
+      penLiftDurations.push(
+        liftRecord
+      );
 
 
-      if (
-        message
-      ) {
+      logEvent(
+
+        "pen_resume",
+
+        {
+          pen_lift_count:
+            penLiftCount,
+
+          pen_lift_duration_ms:
+            liftDuration,
+
+          resume_x:
+            pos.x,
+
+          resume_y:
+            pos.y
+        }
+
+      );
 
 
-        message.textContent =
-
-          t(`直前の ${points[previousIndex].label} から再開してください`, `Please resume from the previous correct circle, ${points[previousIndex].label}.`);
-
-      }
-
-
-      return;
+      penLiftStart =
+        null;
 
     }
 
@@ -4059,24 +4109,38 @@ canvas.addEventListener(
 
 
     penDownStart =
+      resumeTimestamp;
 
-      performance.now();
+
+    /*
+      Pointer Capture:
+      Apple Pencilがcanvas上で動いている間、
+      pointer eventを安定してcanvasで受け取る。
+    */
+    try {
+
+      canvas.setPointerCapture(
+        e.pointerId
+      );
+
+    }
+    catch (error) {
+      // Safari等でcaptureできない場合も課題は継続する
+    }
 
 
+    /*
+      離筆後は、Apple Pencilを再び置いた位置から
+      新しい線分を開始する。
+    */
     currentSegment = [
 
       {
-
         x:
-          points[
-            previousIndex
-          ].x,
+          pos.x,
 
         y:
-          points[
-            previousIndex
-          ].y
-
+          pos.y
       }
 
     ];
@@ -4085,16 +4149,50 @@ canvas.addEventListener(
     lastPoint = {
 
       x:
-        points[
-          previousIndex
-        ].x,
+        pos.x,
 
       y:
-        points[
-          previousIndex
-        ].y
+        pos.y
 
     };
+
+
+    /*
+      再開位置が次の正答円なら、その円への到達を登録する。
+      まだ到達すべきでない円ならエラーを登録する。
+      それ以外の場所でも描画はそのまま継続できる。
+    */
+    if (
+      targetIndex === expectedIndex
+    ) {
+
+      activeWrongTarget =
+        null;
+
+      registerCorrectTarget(
+        targetIndex
+      );
+
+    }
+
+    else if (
+      targetIndex > expectedIndex
+    ) {
+
+      registerError(
+        targetIndex
+      );
+
+    }
+
+    else if (
+      targetIndex === -1
+    ) {
+
+      activeWrongTarget =
+        null;
+
+    }
 
 
     logEvent(
@@ -4102,16 +4200,24 @@ canvas.addEventListener(
       "pen_down",
 
       {
+        resume_x:
+          pos.x,
 
-        resume_label:
+        resume_y:
+          pos.y,
 
-          points[
-            previousIndex
-          ].label
-
+        resume_on_label:
+          targetIndex >= 0
+          ?
+          points[targetIndex].label
+          :
+          ""
       }
 
     );
+
+
+    drawScene();
 
   }
 
@@ -4308,10 +4414,8 @@ function pointerEnd(e) {
 
 
   /*
-    開始前の離筆は
-    カウントしない
+    開始前の離筆はカウントしない
   */
-
   if (
     !started
   ) {
@@ -4336,6 +4440,14 @@ function pointerEnd(e) {
   }
 
 
+  const liftTimestamp =
+    performance.now();
+
+
+  const pos =
+    getPointerPosition(e);
+
+
   drawing =
     false;
 
@@ -4347,7 +4459,7 @@ function pointerEnd(e) {
 
     penDownDuration +=
 
-      performance.now()
+      liftTimestamp
       -
       penDownStart;
 
@@ -4379,10 +4491,14 @@ function pointerEnd(e) {
 
 
   /*
-    開始後の離筆のみカウント
+    開始後の離筆のみカウント。
+    この時刻から次のpointerdownまでを離筆時間とする。
   */
-
   penLiftCount++;
+
+
+  penLiftStart =
+    liftTimestamp;
 
 
   logEvent(
@@ -4392,11 +4508,42 @@ function pointerEnd(e) {
     {
 
       pen_lift_count:
-        penLiftCount
+        penLiftCount,
+
+      pen_lift_start_elapsed_ms:
+        liftTimestamp
+        -
+        taskStart,
+
+      lift_x:
+        pos.x,
+
+      lift_y:
+        pos.y
 
     }
 
   );
+
+
+  try {
+
+    if (
+      canvas.hasPointerCapture(
+        e.pointerId
+      )
+    ) {
+
+      canvas.releasePointerCapture(
+        e.pointerId
+      );
+
+    }
+
+  }
+  catch (error) {
+    // releaseできない環境でも課題は継続
+  }
 
 
   drawScene();
@@ -4473,6 +4620,50 @@ function finishTask() {
     penDownDuration;
 
 
+  const totalPenLiftDuration =
+
+    penLiftDurations.reduce(
+
+      (sum, lift) =>
+        sum + lift.duration_ms,
+
+      0
+
+    );
+
+
+  const meanPenLiftDuration =
+
+    penLiftDurations.length > 0
+
+    ?
+
+    totalPenLiftDuration
+    /
+    penLiftDurations.length
+
+    :
+
+    0;
+
+
+  const maxPenLiftDuration =
+
+    penLiftDurations.length > 0
+
+    ?
+
+    Math.max(
+      ...penLiftDurations.map(
+        lift => lift.duration_ms
+      )
+    )
+
+    :
+
+    0;
+
+
   const result = {
 
 
@@ -4521,6 +4712,22 @@ function finishTask() {
 
     pen_lifts:
       penLiftCount,
+
+
+    pen_lift_total_ms:
+      totalPenLiftDuration,
+
+
+    pen_lift_mean_ms:
+      meanPenLiftDuration,
+
+
+    pen_lift_max_ms:
+      maxPenLiftDuration,
+
+
+    pen_lift_durations:
+      penLiftDurations,
 
 
     total_distance_px:
@@ -5380,7 +5587,7 @@ function downloadCSV() {
 
 
   csv +=
-    "使用セット,"
+    "使用セット（全被験者・全測定時点で固定）,"
     +
     selectedSetNumber
     +
@@ -5388,7 +5595,7 @@ function downloadCSV() {
 
 
   csv +=
-    "被験者セット順,"
+    "測定時点セット順（固定）,"
     +
     csvEscape(
       participantSetOrder.join("-")
@@ -5438,7 +5645,7 @@ function downloadCSV() {
 
   csv +=
 
-    "被験者ID,測定時点,回,Aフォーム,Bフォーム,A時間(秒),B時間(秒),B-A(秒),B/A,(B-A)/A,Log(B/A),Aエラー数,Bエラー数,A離筆回数,B離筆回数,A総描画距離(px),B総描画距離(px),A接触時間(ms),B接触時間(ms),A非接触時間(ms),B非接触時間(ms),A平均描画速度(px/秒),B平均描画速度(px/秒)\n";
+    "被験者ID,測定時点,回,Aフォーム,Bフォーム,A時間(秒),B時間(秒),B-A(秒),B/A,(B-A)/A,Log(B/A),Aエラー数,Bエラー数,A離筆回数,B離筆回数,A総離筆時間(ms),B総離筆時間(ms),A平均離筆時間(ms),B平均離筆時間(ms),A最大離筆時間(ms),B最大離筆時間(ms),A総描画距離(px),B総描画距離(px),A接触時間(ms),B接触時間(ms),A非接触時間(ms),B非接触時間(ms),A平均描画速度(px/秒),B平均描画速度(px/秒)\n";
 
 
   for (
@@ -5568,6 +5775,37 @@ function downloadCSV() {
       A.pen_lifts,
 
       B.pen_lifts,
+
+
+      format(
+        A.pen_lift_total_ms,
+        2
+      ),
+
+      format(
+        B.pen_lift_total_ms,
+        2
+      ),
+
+      format(
+        A.pen_lift_mean_ms,
+        2
+      ),
+
+      format(
+        B.pen_lift_mean_ms,
+        2
+      ),
+
+      format(
+        A.pen_lift_max_ms,
+        2
+      ),
+
+      format(
+        B.pen_lift_max_ms,
+        2
+      ),
 
 
       format(
@@ -6102,6 +6340,90 @@ function downloadCSV() {
 
 
   /* =========================================================
+     離筆記録
+  ========================================================= */
+
+
+  csv +=
+    "\n===== Apple Pencil 離筆記録 =====\n";
+
+
+  csv +=
+    "被験者ID,測定時点,課題,回,フォーム,離筆番号,離筆開始時間(ms),再接触時間(ms),離筆時間(ms)\n";
+
+
+  results.forEach(
+
+    result => {
+
+
+      result
+        .pen_lift_durations
+        .forEach(
+
+          lift => {
+
+
+            csv += [
+
+              participantID,
+
+              selectedTimepoint.code,
+
+              "TMT-"
+              +
+              result.test,
+
+              result.repetition,
+
+              result.test
+              +
+              String(
+                result.form_number
+              ).padStart(
+                2,
+                "0"
+              ),
+
+              lift.lift_number,
+
+              format(
+                lift.start_elapsed_ms,
+                2
+              ),
+
+              format(
+                lift.end_elapsed_ms,
+                2
+              ),
+
+              format(
+                lift.duration_ms,
+                2
+              )
+
+            ]
+
+            .map(
+              csvEscape
+            )
+
+            .join(",")
+
+            +
+
+            "\n";
+
+          }
+
+        );
+
+    }
+
+  );
+
+
+  /* =========================================================
      Event Log
   ========================================================= */
 
@@ -6112,7 +6434,7 @@ function downloadCSV() {
 
   csv +=
 
-    "被験者ID,測定時点,課題,回,フォーム,イベント,経過時間(ms),期待ラベル,接触ラベル,離筆累積回数,再開ラベル\n";
+    "被験者ID,測定時点,課題,回,フォーム,イベント,経過時間(ms),期待ラベル,接触ラベル,離筆累積回数,離筆時間(ms),再開X,再開Y,再開位置ラベル\n";
 
 
   eventLog.forEach(
@@ -6160,7 +6482,19 @@ function downloadCSV() {
         ??
         "",
 
-        event.resume_label
+        event.pen_lift_duration_ms
+        ??
+        "",
+
+        event.resume_x
+        ??
+        "",
+
+        event.resume_y
+        ??
+        "",
+
+        event.resume_on_label
         ||
         ""
 
